@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>星ノ空 — 輝け、数多の星たち</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;700;800&family=Zen+Kaku+Gothic+New:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      /* カラー構成 6:3:1 */
+      --bg-color: #FFFDF5;       /* 6: 薄い黄色（アイボリー） */
+      --main-purple: #6B38A3;    /* 3: 紫 */
+      --accent-yellow: #FFD700;  /* 1: アクセント黄色 */
+      
+      --purple-soft: #F5EFFF;
+      --text-dark: #332244;
+      --text-muted: #665577;
+      --white: #ffffff;
+      
+      --font-mincho: 'Shippori Mincho', serif;
+      --font-gothic: 'Zen Kaku Gothic New', sans-serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-dark);
+      font-family: var(--font-gothic);
+      line-height: 1.8;
+      overflow-x: hidden;
+    }
+
+    /* ── 背景の柔らかな装飾 ── */
+    .bg-decoration {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: -1;
+    }
+    .bg-circle {
+      position: absolute;
+      border-radius: 50%;
+      background: var(--purple-soft);
+      filter: blur(100px);
+      opacity: 0.5;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 30px;
+    }
+    .shippori { font-family: var(--font-mincho); }
+
+    /* ── アニメーション用クラス ── */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.8s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.8s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── NAV & フルスクリーンメニュー ── */
+    nav {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      height: 100px;
+      background: transparent;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 5vw;
+      transition: all 0.4s ease;
+    }
+    nav.scrolled {
+      background: rgba(255, 253, 245, 0.95);
+      backdrop-filter: blur(15px);
+      border-bottom: 1px solid rgba(107, 56, 163, 0.05);
+      height: 70px;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      text-decoration: none;
+      gap: 15px;
+      z-index: 1001; /* メニューの上に出す */
+    }
+    .nav-logo-img {
+      height: 40px;
+      width: auto;
+      object-fit: contain;
+      transition: height 0.4s;
+    }
+    nav.scrolled .nav-logo-img { height: 32px; }
+
+    .logo-text {
+      font-family: var(--font-mincho);
+      font-weight: 800;
+      font-size: 1.4rem;
+      color: var(--bg-color); /* 初期は白系 */
+      letter-spacing: 0.1em;
+      transition: color 0.4s;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    }
+    nav.scrolled .logo-text, .menu-open .logo-text {
+      color: var(--main-purple);
+      text-shadow: none;
+    }
+
+    /* ハンバーガーボタン */
+    .menu-toggle {
+      position: relative;
+      width: 34px;
+      height: 22px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      z-index: 1001;
+    }
+    .menu-toggle span {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background-color: var(--bg-color);
+      transition: all 0.3s ease;
+      border-radius: 2px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+    nav.scrolled .menu-toggle span, .menu-open .menu-toggle span {
+      background-color: var(--main-purple);
+      box-shadow: none;
+    }
+    .menu-toggle span:nth-child(1) { top: 0; }
+    .menu-toggle span:nth-child(2) { top: 10px; }
+    .menu-toggle span:nth-child(3) { top: 20px; }
+
+    /* ハンバーガーのアニメーション（バツ印へ） */
+    .menu-toggle.active span:nth-child(1) { top: 10px; transform: rotate(45deg); }
+    .menu-toggle.active span:nth-child(2) { opacity: 0; }
+    .menu-toggle.active span:nth-child(3) { top: 10px; transform: rotate(-45deg); }
+
+    /* オーバーレイメニュー */
+    .overlay-menu {
+      position: fixed;
+      top: 0;
+      right: -100%;
+      width: 100%;
+      height: 100vh;
+      background: rgba(255, 253, 245, 0.98);
+      backdrop-filter: blur(20px);
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: right 0.5s cubic-bezier(0.77, 0.2, 0.05, 1.0);
+    }
+    .overlay-menu.active { right: 0; }
+    .overlay-menu ul { list-style: none; text-align: center; }
+    .overlay-menu li {
+      margin: 25px 0;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.4s ease;
+    }
+    .overlay-menu.active li {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    /* メニュー項目の遅延表示 */
+    .overlay-menu.active li:nth-child(1) { transition-delay: 0.1s; }
+    .overlay-menu.active li:nth-child(2) { transition-delay: 0.2s; }
+    .overlay-menu.active li:nth-child(3) { transition-delay: 0.3s; }
+    .overlay-menu.active li:nth-child(4) { transition-delay: 0.4s; }
+    .overlay-menu.active li:nth-child(5) { transition-delay: 0.5s; }
+
+    .overlay-menu a {
+      font-family: var(--font-mincho);
+      font-size: clamp(2rem, 5vw, 3rem);
+      color: var(--main-purple);
+      text-decoration: none;
+      font-weight: 800;
+      display: inline-block;
+      transition: color 0.3s, transform 0.3s;
+    }
+    .overlay-menu a:hover {
+      color: var(--accent-yellow);
+      transform: scale(1.05);
+    }
+    .menu-subtitle {
+      display: block;
+      font-family: var(--font-gothic);
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      letter-spacing: 0.2em;
+      margin-top: 5px;
+    }
+
+    /* ── HERO（背景＆タイトル） ── */
+    .hero {
+      position: relative;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      overflow: hidden;
+      background-color: #0b0c16; /* ロゴに合わせた暗い背景 */
+    }
+
+    /* ロゴ画像を背景に広げてぼかすエフェクト */
+    .hero-bg-effect {
+      position: absolute;
+      top: -5%; left: -5%; right: -5%; bottom: -5%;
+      background-image: url('https://raw.githubusercontent.com/YukaKaminashi/Stars-in-the-Sky/main/logo.hoshinosora.webp');
+      background-size: cover;
+      background-position: center;
+      filter: blur(30px) brightness(0.6);
+      z-index: 1;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      padding: 0 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* タイトルとしてのロゴ */
+    .hero-logo-title {
+      width: 90%;
+      max-width: 600px;
+      height: auto;
+      margin-bottom: 20px;
+      filter: drop-shadow(0 15px 30px rgba(0,0,0,0.5));
+      animation: float 6s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-15px); }
+    }
+
+    .hero-catch {
+      font-size: clamp(1rem, 2vw, 1.25rem);
+      font-weight: 500;
+      line-height: 2.2;
+      color: var(--bg-color);
+      text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+      margin-top: 20px;
+      letter-spacing: 0.1em;
+    }
+    .hero-catch strong { color: var(--accent-yellow); font-size: 1.1em; }
+
+    /* スクロールダウンインジケーター */
+    .scroll-down {
+      position: absolute;
+      bottom: 60px;
+      z-index: 2;
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 0.8rem;
+      letter-spacing: 0.2em;
+      writing-mode: vertical-rl;
+      animation: scrollBounce 2s infinite;
+    }
+    .scroll-down::after {
+      content: "";
+      width: 1px;
+      height: 50px;
+      background: rgba(255, 255, 255, 0.7);
+      display: block;
+      margin-top: 15px;
+    }
+    @keyframes scrollBounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(10px); }
+    }
+
+    /* 波型のセパレーター */
+    .hero-wave {
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      width: 100%;
+      overflow: hidden;
+      line-height: 0;
+      z-index: 3;
+    }
+    .hero-wave svg {
+      position: relative;
+      display: block;
+      width: calc(100% + 1.3px);
+      height: 80px;
+    }
+    .hero-wave .shape-fill { fill: var(--bg-color); }
+
+    /* ── SECTION LABEL ── */
+    .section-label {
+      font-weight: 700;
+      color: var(--main-purple);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      letter-spacing: 0.2em;
+      margin-bottom: 24px;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+    }
+    .section-label::before {
+      content: "";
+      width: 40px;
+      height: 1px;
+      background-color: var(--main-purple);
+    }
+    .section-title {
+      font-size: clamp(2rem, 5vw, 2.8rem);
+      color: var(--main-purple);
+      margin-bottom: 40px;
+      line-height: 1.3;
+    }
+
+    /* ── SECTIONS ── */
+    .section { padding: 120px 0; }
+    
+    .split-layout {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 80px;
+      align-items: center;
+    }
+
+    /* ── VALUE CARDS ── */
+    .values-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 30px;
+      margin-top: 80px;
+    }
+    .value-item {
+      background: var(--white);
+      padding: 50px 30px;
+      border-radius: 40px 10px 40px 10px; /* 洗練された角丸 */
+      box-shadow: 0 15px 35px rgba(107, 56, 163, 0.04);
+      border: 1px solid rgba(107, 56, 163, 0.05);
+      text-align: center;
+      transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s;
+    }
+    .value-item:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 25px 45px rgba(107, 56, 163, 0.08);
+    }
+    .value-icon-img {
+      width: 70px;
+      height: 70px;
+      object-fit: contain;
+      margin-bottom: 25px;
+    }
+    .value-title {
+      color: var(--main-purple);
+      font-weight: 700;
+      font-size: 1.2rem;
+      margin-bottom: 12px;
+    }
+    .value-desc { font-size: 0.9rem; color: var(--text-muted); }
+
+    /* ── GROUPS ── */
+    .group-card {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      background: var(--white);
+      border-radius: 30px;
+      overflow: hidden;
+      margin-bottom: 40px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+      border: 1px solid rgba(107, 56, 163, 0.05);
+      transition: transform 0.3s;
+    }
+    .group-card:hover { transform: scale(1.02); }
+    .group-image {
+      background: linear-gradient(135deg, var(--purple-soft), #fff);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+    }
+    .group-image img {
+      width: 100%;
+      height: auto;
+      max-width: 160px;
+      filter: drop-shadow(0 10px 15px rgba(107, 56, 163, 0.2));
+    }
+    .group-content { padding: 50px; display: flex; flex-direction: column; justify-content: center; }
+    .group-name {
+      font-size: 1.8rem;
+      color: var(--main-purple);
+      margin-bottom: 15px;
+      font-weight: 800;
+      font-family: var(--font-mincho);
+    }
+
+    /* ── SCHEDULE ── */
+    .schedule-box {
+      background: linear-gradient(135deg, var(--main-purple), #4a2473);
+      color: var(--white);
+      padding: clamp(40px, 8vw, 80px);
+      border-radius: 50px;
+      max-width: 900px;
+      margin: 0 auto;
+      position: relative;
+      box-shadow: 0 20px 50px rgba(107, 56, 163, 0.2);
+    }
+    .schedule-item {
+      display: flex;
+      align-items: center;
+      gap: 40px;
+      padding: 30px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .schedule-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .schedule-time {
+      font-family: var(--font-mincho);
+      font-weight: 700;
+      font-size: 1.8rem;
+      color: var(--accent-yellow);
+      min-width: 140px;
+    }
+
+    /* ── FAQ (NEW) ── */
+    .faq-list {
+      max-width: 800px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    .faq-item {
+      background: var(--white);
+      border-radius: 20px;
+      padding: 25px 30px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.03);
+      border: 1px solid rgba(107, 56, 163, 0.05);
+      cursor: pointer;
+    }
+    .faq-item summary {
+      font-weight: 700;
+      color: var(--main-purple);
+      font-size: 1.1rem;
+      list-style: none;
+      position: relative;
+      outline: none;
+    }
+    .faq-item summary::-webkit-details-marker { display: none; }
+    .faq-item summary::after {
+      content: '+';
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1.8rem;
+      color: var(--accent-yellow);
+      transition: transform 0.3s;
+    }
+    .faq-item[open] summary::after { transform: translateY(-50%) rotate(45deg); color: var(--main-purple); }
+    .faq-item p {
+      margin-top: 20px;
+      color: var(--text-muted);
+      line-height: 1.8;
+      border-top: 1px dashed var(--purple-soft);
+      padding-top: 20px;
+    }
+
+    /* ── CTA ── */
+    .btn-main {
+      display: inline-flex;
+      align-items: center;
+      gap: 15px;
+      padding: 25px 60px;
+      background-color: var(--main-purple);
+      color: var(--white);
+      text-decoration: none;
+      border-radius: 100px;
+      font-weight: 700;
+      font-size: 1.2rem;
+      transition: all 0.3s ease;
+      box-shadow: 0 15px 30px rgba(107, 56, 163, 0.25);
+    }
+    .btn-main:hover {
+      background-color: var(--accent-yellow);
+      color: var(--main-purple);
+      transform: translateY(-5px);
+      box-shadow: 0 20px 40px rgba(255, 215, 0, 0.3);
+    }
+    .btn-icon { width: 30px; height: 30px; object-fit: contain; }
+
+    footer {
+      padding: 80px 0;
+      text-align: center;
+      background: #f0eaf8;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    /* ── MOBILE ── */
+    @media (max-width: 768px) {
+      .split-layout { grid-template-columns: 1fr; gap: 40px; }
+      .values-grid { grid-template-columns: 1fr; }
+      .group-card { grid-template-columns: 1fr; }
+      .group-image { height: 220px; }
+      .group-content { padding: 30px; text-align: center; }
+      .schedule-item { flex-direction: column; align-items: flex-start; gap: 10px; }
+      .hero-catch { font-size: 0.95rem; }
+      .hero-wave svg { height: 40px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 画像URL定数 -->
+  <script>
+    const GITHUB_RAW = "https://raw.githubusercontent.com/YukaKaminashi/Stars-in-the-Sky/main/";
+  </script>
+
+  <div class="bg-decoration">
+    <div class="bg-circle" style="width: 500px; height: 500px; top: 10%; right: -5%;"></div>
+    <div class="bg-circle" style="width: 400px; height: 400px; bottom: 20%; left: -10%; background: var(--accent-yellow); opacity: 0.1;"></div>
+  </div>
+
+  <!-- ナビゲーション -->
+  <nav id="navbar">
+    <a href="#" class="logo-container">
+      <img src="https://raw.githubusercontent.com/YukaKaminashi/Stars-in-the-Sky/main/logo.hoshinosora.webp" alt="" class="nav-logo-img">
+      <span class="logo-text">星ノ空</span>
+    </a>
+    <button class="menu-toggle" id="menuToggle" aria-label="メニューを開く">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+  </nav>
+
+  <!-- フルスクリーンメニュー -->
+  <div class="overlay-menu" id="overlayMenu">
+    <ul>
+      <li><a href="#about">Philosophy<span class="menu-subtitle">私たちについて</span></a></li>
+      <li><a href="#groups">Groups<span class="menu-subtitle">グループ紹介</span></a></li>
+      <li><a href="#schedule">Schedule<span class="menu-subtitle">活動時間</span></a></li>
+      <li><a href="#faq">FAQ<span class="menu-subtitle">よくある質問</span></a></li>
+      <li><a href="#join">Join Us<span class="menu-subtitle">参加申請</span></a></li>
+    </ul>
+  </div>
+
+  <!-- HERO セクション -->
+  <header class="hero">
+    <div class="hero-bg-effect"></div>
+    <div class="hero-content fade-in">
+      <img src="https://raw.githubusercontent.com/YukaKaminashi/Stars-in-the-Sky/main/logo.hoshinosora.webp" alt="星ノ空" class="hero-logo-title">
+      <div class="hero-catch">
+        「ただ強いだけじゃつまらない！」<br>
+        一人ひとりが自分らしく輝いて、<br>
+        みんなでひとつの<strong>大きな星座</strong>になる。
+      </div>
+    </div>
+    <div class="scroll-down">SCROLL</div>
+    
+    <!-- 波型のセパレーター -->
+    <div class="hero-wave">
+      <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
+        <path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V120H0V95.8C59.71,118.08,130.83,124.62,195.95,112.5,238.45,104.57,280.24,80.73,321.39,56.44Z" class="shape-fill"></path>
+      </svg>
+    </div>
+  </header>
+
+  <section id="about" class="section">
+    <div class="container">
+      <div class="split-layout">
+        <div class="about-text fade-in">
+          <span class="section-label">Philosophy</span>
+          <h2 class="shippori section-title">みんなが主役！<br>ずっとなかよし。</h2>
+          <p>学生から80代まで、幅広い世代が集まる「星ノ空」。<br>
+            一門内で競い合うのではなく、それぞれの個性を活かしながら、全員でひとつの大きな星座を描くことを大切にしています。<br>
+            初心者も大歓迎。自由に楽しく集まれる場所で、あなたをお待ちしています。</p>
+        </div>
+        <div class="fade-in" style="text-align: center;">
+          <img src="https://raw.githubusercontent.com/YukaKaminashi/Stars-in-the-Sky/main/logo.hoshinosora.webp" alt="星ノ空" style="width: 100%; max-width: 350px; opacity: 0.9; filter: drop-shadow(0 20px 30px rgba(107,56,163,0.15)); border-radius: 20px;">
+        </div>
+      </div>
+
+      <div class="values-grid">
+        <div class="value-item fade-in">
+          <img src="https://raw.githubusercontent.com/YukaKaminashi/Stars-in-the-Sky/main/star.emoji.png" alt="主役" class="value-icon-img">
+          <div class="value-title">みんなが主役！</div>
+          <p class="value-desc">違うスタイルだから楽しい！自分らしさを輝かせよう。</p>
+        </div>
+        <div class="value-item fade-in">
+          <img src="https://raw.githubusercontent.com/YukaKaminashi/Stars-in-the-Sky/main/friends.emoji.png" alt="なかよし" class="value-icon-img">
+          <div class="value-title">ずっとなかよし</div>
+          <p class="value-desc">雑談こそ全力！初心者から達人まで連携は抜群です。</p>
+        </div>
+        <div class="value-item fade-in">
+          <img src="https://raw.githubusercontent.com/YukaKaminashi/Stars-in-the-Sky/main/nice.emoji.png" alt="ないす" class="value-icon-img">
+          <div class="value-title">ないす！の嵐</div>
+          <p class="value-desc">どんながんばりもみんなが褒める、温かい空気感。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="groups" class="section" style="background: rgba(107, 56, 163, 0.02); border-radius: 100px 100px 0 0;">
+    <div class="container">
+      <div class="fade-in">
+        <span class="section-label">Groups</span>
+        <h2 class="shippori section-title">グループ紹介</h2>
+      </div>
+      
+      <!-- はなたれパンダ -->
+      <div class="group-card fade-in">
+        <div class="group-image">
+          <img src="https://raw.githubusercontent.com/YukaKaminashi/Stars-in-the-Sky/main/hanatare.icon.png" alt="はなたれパンダ">
+        </div>
+        <div class="group-content">
+          <div class="group-name">はなたれパンダ</div>
+          <p>わいわいしすぎ！？とにかくおしゃべり、士気も高い！学生から80代までみんな楽しくやってます！今日もはなたらしていくぞー！</p>
+        </div>
+      </div>
+
+      <!-- たまねぎ -->
+      <div class="group-card fade-in">
+        <div class="group-image">
+          <img src="https://raw.githubusercontent.com/YukaKaminashi/Stars-in-the-Sky/main/tamanegi.icon.png" alt="たまねぎ">
+        </div>
+        <div class="group-content">
+          <div class="group-name">たまねぎ</div>
+          <p>遥かオリオンの星より生まれし一族。その名はオニオン、地上では「たまねぎ」と呼ばれる。幾重にも重なる層は、仲間との絆の証。</p>
+        </div>
+      </div>
+
+      <!-- こぐま -->
+      <div class="group-card fade-in">
+        <div class="group-image">
+          <img src="https://raw.githubusercontent.com/YukaKaminashi/Stars-in-the-Sky/main/koguma.icon.png" alt="こぐま">
+        </div>
+        <div class="group-content">
+          <div class="group-name">こぐま</div>
+          <p>活発で仲の良い「こぐま組」。やるときはみんなで力を合わせ、最後までやり遂げます。楽しさと達成感をわかちあうチームです。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="schedule" class="section">
+    <div class="container fade-in">
+      <div class="schedule-box">
+        <span class="section-label" style="color: var(--accent-yellow); border-color: var(--accent-yellow);">Schedule</span>
+        <h2 class="shippori section-title" style="color: white;">活動スケジュール</h2>
+        
+        <div class="schedule-item">
+          <div class="schedule-time">11:00 ~</div>
+          <div class="schedule-text">まったり開始（お昼休みにちょこっと）</div>
+        </div>
+        <div class="schedule-item">
+          <div class="schedule-time">20:00 ~</div>
+          <div class="schedule-text">夜組 集合！🌙</div>
+        </div>
+        <div class="schedule-item">
+          <div class="schedule-time">21:00 ~</div>
+          <div class="schedule-text">全力わちゃわちゃタイム！一番盛り上がる時間です。</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ セクション -->
+  <section id="faq" class="section" style="padding-top: 60px;">
+    <div class="container">
+      <div class="fade-in" style="text-align: center; margin-bottom: 50px;">
+        <span class="section-label" style="justify-content: center;">Q & A</span>
+        <h2 class="shippori section-title">よくあるご質問</h2>
+      </div>
+      <div class="faq-list">
+        <details class="faq-item fade-in">
+          <summary>初心者ですが参加しても大丈夫ですか？</summary>
+          <p>もちろんです！プレイスタイルや経験に関わらず、みんなで楽しむことを第一にしています。分からないことはベテランメンバーが優しくサポートしますのでご安心ください。</p>
+        </details>
+        <details class="faq-item fade-in">
+          <summary>ボイスチャット（VC）やDiscordの参加は必須ですか？</summary>
+          <p>Discordの導入は推奨していますが、聞き専（通話に参加せず聞くだけ）や、テキストチャットのみの参加も大歓迎です！24時間開放されているので、好きな時に遊びに来てください。</p>
+        </details>
+        <details class="faq-item fade-in">
+          <summary>「無言」でコツコツ遊びたいのですが…</summary>
+          <p>自分の色を出してもOK、出さなくてもOKです！「ただ強いだけじゃつまらない」がモットーですので、ご自身のペースで自由に星ノ空での生活を楽しんでください。</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section id="join" class="section" style="text-align: center; padding-bottom: 150px;">
+    <div class="container fade-in">
+      <h2 class="shippori section-title" style="font-size: 3rem; margin-bottom: 30px;">一緒に星座を描きませんか？</h2>
+      <p style="margin-bottom: 50px; color: var(--text-muted); line-height: 2; font-size: 1.1rem;">
+        参加申請はフォームから受け付けています。<br>
+        2〜3日以内に担当者よりご連絡します。あなたとお会いできるのを楽しみにしています！
+      </p>
+      <a href="https://forms.gle/nkCnVuB4wRo7WpS3A" target="_blank" class="btn-main">
+        <img src="https://raw.githubusercontent.com/YukaKaminashi/Stars-in-the-Sky/main/star.emoji.png" alt="" class="btn-icon">
+        参加申請フォームへ ✦
+      </a>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container fade-in">
+      <img src="https://raw.githubusercontent.com/YukaKaminashi/Stars-in-the-Sky/main/logo.hoshinosora.webp" alt="星ノ空" style="height: 60px; margin-bottom: 20px;">
+      <p class="shippori" style="font-size: 1.4rem; color: var(--main-purple); font-weight: 800; margin-bottom: 10px;">星ノ空</p>
+      <p>信長の野望 真戦 S102〜S107<br>輝け、数多の星たち</p>
+      <p style="margin-top: 40px; opacity: 0.5; font-size: 0.8rem; letter-spacing: 0.1em;">&copy; 星ノ空 All Rights Reserved.</p>
+    </div>
+  </footer>
+
+  <!-- スクリプト：メニュー開閉とスクロールアニメーション -->
+  <script>
+    // ハンバーガーメニューの開閉処理
+    const menuToggle = document.getElementById('menuToggle');
+    const overlayMenu = document.getElementById('overlayMenu');
+    const navbar = document.getElementById('navbar');
+    const menuLinks = overlayMenu.querySelectorAll('a');
+
+    menuToggle.addEventListener('click', () => {
+      menuToggle.classList.toggle('active');
+      overlayMenu.classList.toggle('active');
+      document.body.classList.toggle('menu-open');
+      
+      // メニュー展開時はスクロールを止める
+      if (overlayMenu.classList.contains('active')) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = '';
+      }
+    });
+
+    // メニュー内のリンクをクリックしたらメニューを閉じる
+    menuLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        menuToggle.classList.remove('active');
+        overlayMenu.classList.remove('active');
+        document.body.classList.remove('menu-open');
+        document.body.style.overflow = '';
+      });
+    });
+
+    // スクロール時のナビゲーションバーのスタイル変更
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 50) {
+        navbar.classList.add('scrolled');
+      } else {
+        navbar.classList.remove('scrolled');
+      }
+    });
+
+    // スクロール連動のフェードインアニメーション
+    const observerOptions = {
+      root: null,
+      rootMargin: '0px',
+      threshold: 0.15
+    };
+
+    const observer = new IntersectionObserver((entries, observer) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target); // 一度表示されたら監視を解除
+        }
+      });
+    }, observerOptions);
+
+    document.querySelectorAll('.fade-in').forEach(element => {
+      observer.observe(element);
+    });
+    
+    // ページ読み込み完了時にHeroセクションの要素を表示
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        document.querySelector('.hero-content').classList.add('visible');
+      }, 300);
+    });
+  </script>
+</body>
+</html>
