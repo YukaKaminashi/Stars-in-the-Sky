@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ブログ | 星ノ空</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;700;800&family=Zen+Kaku+Gothic+New:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-color: #FFFDF5;
+      --main-purple: #6B38A3;
+      --accent-yellow: #FFD700;
+      --purple-soft: #F5EFFF;
+      --text-dark: #332244;
+      --text-muted: #665577;
+      --white: #ffffff;
+      --font-mincho: 'Shippori Mincho', serif;
+      --font-gothic: 'Zen Kaku Gothic New', sans-serif;
+    }
+
+    /* ── 各グループカラー ── */
+    --color-広報課: #6B38A3;
+    --color-はなたれパンダ: #E75480;
+    --color-たまねぎ: #2E8B57;
+    --color-こぐま: #D2691E;
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg-color);
+      color: var(--text-dark);
+      font-family: var(--font-gothic);
+      line-height: 1.8;
+    }
+
+    /* ── ナビ（index.htmlと共通） ── */
+    nav {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      height: 70px;
+      background: rgba(255,253,245,0.95);
+      backdrop-filter: blur(15px);
+      border-bottom: 1px solid rgba(107,56,163,0.08);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 5vw;
+    }
+    .logo-container {
+      display: flex;
+      align-items: center;
+      text-decoration: none;
+      gap: 12px;
+    }
+    .nav-logo-img { height: 32px; width: auto; }
+    .logo-text {
+      font-family: var(--font-mincho);
+      font-weight: 800;
+      font-size: 1.3rem;
+      color: var(--main-purple);
+      letter-spacing: 0.1em;
+    }
+    .nav-blog-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+    }
+    .btn-write {
+      padding: 8px 20px;
+      background: var(--main-purple);
+      color: var(--white);
+      text-decoration: none;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      transition: all 0.3s;
+    }
+    .btn-write:hover {
+      background: var(--accent-yellow);
+      color: var(--main-purple);
+    }
+
+    /* ── ページヘッダー ── */
+    .page-header {
+      padding: 130px 30px 60px;
+      text-align: center;
+    }
+    .page-header .section-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.25em;
+      color: var(--main-purple);
+      text-transform: uppercase;
+      border: 1px solid rgba(107,56,163,0.3);
+      padding: 6px 18px;
+      border-radius: 100px;
+      margin-bottom: 20px;
+    }
+    .page-header h1 {
+      font-family: var(--font-mincho);
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 800;
+      color: var(--text-dark);
+    }
+
+    /* ── フィルタータブ ── */
+    .filter-area {
+      max-width: 900px;
+      margin: 0 auto 40px;
+      padding: 0 30px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .filter-btn {
+      padding: 8px 20px;
+      border-radius: 100px;
+      border: 1.5px solid #e0d8f0;
+      background: var(--white);
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-family: var(--font-gothic);
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .filter-btn:hover { border-color: var(--main-purple); color: var(--main-purple); }
+    .filter-btn.active {
+      background: var(--main-purple);
+      border-color: var(--main-purple);
+      color: var(--white);
+    }
+
+    /* ── 投稿一覧 ── */
+    #post-list {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 30px 100px;
+    }
+
+    .post-card {
+      background: var(--white);
+      border-radius: 20px;
+      padding: 32px 36px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(107,56,163,0.06);
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+      border-left: 4px solid var(--main-purple);
+      display: block;
+      text-decoration: none;
+      color: inherit;
+    }
+    .post-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(107,56,163,0.12);
+    }
+    .post-card[data-group="はなたれパンダ"] { border-left-color: #E75480; }
+    .post-card[data-group="たまねぎ"] { border-left-color: #2E8B57; }
+    .post-card[data-group="こぐま"] { border-left-color: #D2691E; }
+
+    .post-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .post-group-badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 100px;
+      background: var(--purple-soft);
+      color: var(--main-purple);
+      letter-spacing: 0.05em;
+    }
+    .post-card[data-group="はなたれパンダ"] .post-group-badge {
+      background: #ffe0eb; color: #E75480;
+    }
+    .post-card[data-group="たまねぎ"] .post-group-badge {
+      background: #e0f5e9; color: #2E8B57;
+    }
+    .post-card[data-group="こぐま"] .post-group-badge {
+      background: #f5ede0; color: #D2691E;
+    }
+    .post-author { font-size: 0.9rem; font-weight: 700; color: var(--text-dark); }
+    .post-date { font-size: 0.8rem; color: var(--text-muted); margin-left: auto; }
+
+    .post-title {
+      font-family: var(--font-mincho);
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin-bottom: 10px;
+      line-height: 1.5;
+    }
+    .post-excerpt {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.7;
+    }
+    .post-readmore {
+      display: inline-block;
+      margin-top: 14px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--main-purple);
+      letter-spacing: 0.1em;
+    }
+
+    /* ── 記事詳細 ── */
+    #post-detail {
+      display: none;
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 0 30px 100px;
+    }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin: 100px 0 40px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      transition: color 0.2s;
+    }
+    .back-btn:hover { color: var(--main-purple); }
+
+    .detail-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .detail-title {
+      font-family: var(--font-mincho);
+      font-size: clamp(1.6rem, 4vw, 2.2rem);
+      font-weight: 800;
+      line-height: 1.4;
+      margin-bottom: 32px;
+      color: var(--text-dark);
+    }
+
+    /* Quill で生成されたコンテンツのスタイル */
+    .detail-content {
+      font-size: 1rem;
+      line-height: 1.9;
+      color: var(--text-dark);
+    }
+    .detail-content h2 {
+      font-family: var(--font-mincho);
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--main-purple);
+      margin: 2em 0 0.8em;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--purple-soft);
+    }
+    .detail-content h3 {
+      font-family: var(--font-mincho);
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin: 1.8em 0 0.6em;
+    }
+    .detail-content p { margin-bottom: 1em; }
+    .detail-content img {
+      max-width: 100%;
+      border-radius: 12px;
+      margin: 1.5em 0;
+      box-shadow: 0 8px 30px rgba(107,56,163,0.1);
+    }
+    .detail-content ul, .detail-content ol {
+      padding-left: 1.5em;
+      margin-bottom: 1em;
+    }
+    .detail-content li { margin-bottom: 0.4em; }
+    .detail-content a { color: var(--main-purple); }
+    .detail-content .ql-align-center { text-align: center; }
+    .detail-content .ql-align-right { text-align: right; }
+
+    /* ── ローディング・空状態 ── */
+    .loading-area, .empty-area {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--text-muted);
+    }
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--purple-soft);
+      border-top-color: var(--main-purple);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    footer {
+      padding: 60px 0;
+      text-align: center;
+      background: #f0eaf8;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 600px) {
+      .post-card { padding: 24px 20px; }
+      #post-list, #post-detail { padding: 0 16px 80px; }
+      .filter-area { padding: 0 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ナビゲーション -->
+  <nav>
+    <a href="index.html" class="logo-container">
+      <img src="https://raw.githubusercontent.com/YukaKaminashi/Stars-in-the-Sky/main/logo.hoshinosora.webp" alt="星ノ空" class="nav-logo-img" />
+      <span class="logo-text">星ノ空</span>
+    </a>
+    <span class="nav-blog-label">BLOG</span>
+    <a href="admin.html" class="btn-write">✦ 投稿する</a>
+  </nav>
+
+  <!-- ページヘッダー -->
+  <div class="page-header" id="blog-header">
+    <span class="section-label">Blog</span>
+    <h1 class="shippori">みんなの声</h1>
+  </div>
+
+  <!-- フィルタータブ -->
+  <div class="filter-area" id="filter-area">
+    <button class="filter-btn active" data-filter="all">すべて</button>
+    <button class="filter-btn" data-filter="広報課">広報課</button>
+    <button class="filter-btn" data-filter="はなたれパンダ">はなたれパンダ</button>
+    <button class="filter-btn" data-filter="たまねぎ">たまねぎ</button>
+    <button class="filter-btn" data-filter="こぐま">こぐま</button>
+  </div>
+
+  <!-- 投稿一覧 -->
+  <div id="post-list">
+    <div class="loading-area">
+      <div class="loading-spinner"></div>
+      <p>読み込み中...</p>
+    </div>
+  </div>
+
+  <!-- 記事詳細 -->
+  <div id="post-detail">
+    <div class="back-btn" id="back-btn">← 一覧に戻る</div>
+    <div class="detail-meta" id="detail-meta"></div>
+    <h1 class="detail-title" id="detail-title"></h1>
+    <div class="detail-content" id="detail-content"></div>
+  </div>
+
+  <footer>
+    <div style="max-width:900px; margin:0 auto; padding:0 30px;">
+      <p class="shippori" style="font-size:1.2rem; color:var(--main-purple); font-weight:800; margin-bottom:8px;">星ノ空</p>
+      <p>信長の野望 真戦 S102〜S107</p>
+      <p style="margin-top:30px; opacity:0.5; font-size:0.8rem;">&copy; 星ノ空 All Rights Reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    // ════════════════════════════════════════
+    //  設定
+    // ════════════════════════════════════════
+    const GAS_URL = 'YOUR_GAS_WEBAPP_URL_HERE'; // GASデプロイ後のURLを貼り付け
+
+    // ════════════════════════════════════════
+    //  状態管理
+    // ════════════════════════════════════════
+    let allPosts = [];
+    let currentFilter = 'all';
+
+    // ════════════════════════════════════════
+    //  初期化
+    // ════════════════════════════════════════
+    async function init() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const postId = urlParams.get('id');
+
+      if (postId) {
+        await loadSinglePost(postId);
+      } else {
+        await loadPostList();
+      }
+    }
+
+    // ════════════════════════════════════════
+    //  投稿一覧取得・表示
+    // ════════════════════════════════════════
+    async function loadPostList() {
+      document.getElementById('post-list').style.display = 'block';
+      document.getElementById('post-detail').style.display = 'none';
+      document.getElementById('filter-area').style.display = 'flex';
+      document.getElementById('blog-header').style.display = 'block';
+
+      try {
+        const res = await fetch(GAS_URL + '?action=getPosts');
+        allPosts = await res.json();
+        renderPostList(allPosts);
+      } catch (err) {
+        document.getElementById('post-list').innerHTML =
+          '<div class="empty-area"><p>記事の読み込みに失敗しました。</p></div>';
+        console.error(err);
+      }
+    }
+
+    function renderPostList(posts) {
+      const filtered = currentFilter === 'all'
+        ? posts
+        : posts.filter(p => p.group === currentFilter);
+
+      const container = document.getElementById('post-list');
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<div class="empty-area"><p>まだ記事がありません。</p></div>';
+        return;
+      }
+
+      container.innerHTML = filtered.map(post => `
+        <a class="post-card" data-group="${escHtml(post.group)}" href="blog.html?id=${post.id}">
+          <div class="post-meta">
+            <span class="post-group-badge">${escHtml(post.group)}</span>
+            <span class="post-author">${escHtml(post.author)}</span>
+            <span class="post-date">${escHtml(post.date)}</span>
+          </div>
+          <div class="post-title">${escHtml(post.title)}</div>
+          <div class="post-excerpt">${escHtml(post.excerpt || '')}…</div>
+          <span class="post-readmore">続きを読む →</span>
+        </a>
+      `).join('');
+    }
+
+    // ════════════════════════════════════════
+    //  記事1件取得・表示
+    // ════════════════════════════════════════
+    async function loadSinglePost(id) {
+      document.getElementById('post-list').style.display = 'none';
+      document.getElementById('filter-area').style.display = 'none';
+      document.getElementById('blog-header').style.display = 'none';
+      document.getElementById('post-detail').style.display = 'block';
+
+      document.getElementById('detail-content').innerHTML =
+        '<div class="loading-area"><div class="loading-spinner"></div><p>読み込み中...</p></div>';
+
+      try {
+        const res = await fetch(GAS_URL + '?action=getPost&id=' + encodeURIComponent(id));
+        const post = await res.json();
+
+        if (post.error) throw new Error(post.error);
+
+        document.title = post.title + ' | 星ノ空ブログ';
+
+        document.getElementById('detail-meta').innerHTML = `
+          <span class="post-group-badge" style="${groupStyle(post.group)}">${escHtml(post.group)}</span>
+          <span style="font-weight:700;">${escHtml(post.author)}</span>
+          <span style="color:var(--text-muted); font-size:0.85rem;">${escHtml(post.date)}</span>
+        `;
+        document.getElementById('detail-title').textContent = post.title;
+        // contentはQuill生成のHTMLをそのまま表示
+        document.getElementById('detail-content').innerHTML = post.content;
+
+      } catch (err) {
+        document.getElementById('detail-content').innerHTML =
+          '<div class="empty-area"><p>記事が見つかりませんでした。</p></div>';
+        console.error(err);
+      }
+    }
+
+    // ════════════════════════════════════════
+    //  フィルター
+    // ════════════════════════════════════════
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.dataset.filter;
+        renderPostList(allPosts);
+      });
+    });
+
+    // ════════════════════════════════════════
+    //  「一覧に戻る」ボタン
+    // ════════════════════════════════════════
+    document.getElementById('back-btn').addEventListener('click', () => {
+      history.pushState({}, '', 'blog.html');
+      loadPostList();
+    });
+
+    // ════════════════════════════════════════
+    //  ユーティリティ
+    // ════════════════════════════════════════
+    function escHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function groupStyle(group) {
+      const styles = {
+        '広報課': 'background:#F5EFFF; color:#6B38A3;',
+        'はなたれパンダ': 'background:#ffe0eb; color:#E75480;',
+        'たまねぎ': 'background:#e0f5e9; color:#2E8B57;',
+        'こぐま': 'background:#f5ede0; color:#D2691E;'
+      };
+      return styles[group] || 'background:#F5EFFF; color:#6B38A3;';
+    }
+
+    init();
+  </script>
+</body>
+</html>

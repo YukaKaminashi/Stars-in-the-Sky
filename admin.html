@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ブログ投稿 | 星ノ空</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;700;800&family=Zen+Kaku+Gothic+New:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-color: #FFFDF5;
+      --main-purple: #6B38A3;
+      --accent-yellow: #FFD700;
+      --purple-soft: #F5EFFF;
+      --text-dark: #332244;
+      --text-muted: #665577;
+      --white: #ffffff;
+      --font-mincho: 'Shippori Mincho', serif;
+      --font-gothic: 'Zen Kaku Gothic New', sans-serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--bg-color);
+      color: var(--text-dark);
+      font-family: var(--font-gothic);
+      min-height: 100vh;
+    }
+
+    /* ── パスワード画面 ── */
+    #password-screen {
+      position: fixed;
+      inset: 0;
+      background: var(--bg-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .pw-box {
+      background: var(--white);
+      border-radius: 20px;
+      padding: 50px 60px;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(107,56,163,0.12);
+      max-width: 400px;
+      width: 90%;
+    }
+    .pw-logo {
+      font-family: var(--font-mincho);
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--main-purple);
+      margin-bottom: 8px;
+    }
+    .pw-sub {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-bottom: 30px;
+    }
+    .pw-input {
+      width: 100%;
+      padding: 14px 20px;
+      border: 2px solid var(--purple-soft);
+      border-radius: 12px;
+      font-size: 1rem;
+      font-family: var(--font-gothic);
+      outline: none;
+      transition: border-color 0.3s;
+      margin-bottom: 16px;
+    }
+    .pw-input:focus { border-color: var(--main-purple); }
+    .pw-btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--main-purple);
+      color: var(--white);
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-family: var(--font-gothic);
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.2s;
+    }
+    .pw-btn:hover { background: #5a2d8a; transform: translateY(-2px); }
+    .pw-error {
+      color: #e53e3e;
+      font-size: 0.85rem;
+      margin-top: 10px;
+      display: none;
+    }
+
+    /* ── 管理画面 ── */
+    #admin-panel { display: none; }
+
+    header.admin-header {
+      background: var(--white);
+      border-bottom: 1px solid var(--purple-soft);
+      padding: 0 40px;
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-logo {
+      font-family: var(--font-mincho);
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--main-purple);
+    }
+    .header-subtitle {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-left: 12px;
+    }
+    .btn-logout {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      background: none;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 6px 16px;
+      cursor: pointer;
+      font-family: var(--font-gothic);
+      transition: all 0.2s;
+    }
+    .btn-logout:hover { border-color: var(--main-purple); color: var(--main-purple); }
+
+    .admin-body {
+      max-width: 860px;
+      margin: 40px auto;
+      padding: 0 30px 80px;
+    }
+
+    .form-group { margin-bottom: 24px; }
+    .form-label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      letter-spacing: 0.05em;
+    }
+    .form-input, .form-select {
+      width: 100%;
+      padding: 14px 18px;
+      border: 2px solid #e8e0f0;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-family: var(--font-gothic);
+      color: var(--text-dark);
+      background: var(--white);
+      outline: none;
+      transition: border-color 0.3s;
+    }
+    .form-input:focus, .form-select:focus { border-color: var(--main-purple); }
+    .form-input.title-input {
+      font-family: var(--font-mincho);
+      font-size: 1.4rem;
+      font-weight: 700;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    /* ── Quill エディタカスタマイズ ── */
+    .editor-wrapper {
+      border: 2px solid #e8e0f0;
+      border-radius: 12px;
+      overflow: hidden;
+      transition: border-color 0.3s;
+    }
+    .editor-wrapper:focus-within { border-color: var(--main-purple); }
+    .ql-toolbar.ql-snow {
+      border: none;
+      border-bottom: 1px solid #e8e0f0;
+      background: #faf8ff;
+      padding: 12px 16px;
+    }
+    .ql-container.ql-snow {
+      border: none;
+      font-family: var(--font-gothic);
+      font-size: 1rem;
+    }
+    .ql-editor {
+      min-height: 400px;
+      padding: 24px;
+      color: var(--text-dark);
+      line-height: 1.9;
+    }
+    .ql-editor h2 {
+      font-family: var(--font-mincho);
+      color: var(--main-purple);
+      font-size: 1.5rem;
+      margin: 1.5em 0 0.5em;
+    }
+    .ql-editor h3 {
+      font-family: var(--font-mincho);
+      font-size: 1.2rem;
+      margin: 1.2em 0 0.4em;
+    }
+    .ql-editor img {
+      max-width: 100%;
+      border-radius: 8px;
+    }
+    .ql-editor p { margin-bottom: 0.6em; }
+
+    /* 画像アップロード中のオーバーレイ */
+    #upload-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(255,253,245,0.85);
+      z-index: 9998;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+    }
+    #upload-overlay.active { display: flex; }
+    .upload-spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid var(--purple-soft);
+      border-top-color: var(--main-purple);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* 送信ボタン */
+    .submit-area {
+      text-align: right;
+      margin-top: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 16px;
+    }
+    #submit-msg {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+    .btn-submit {
+      padding: 16px 48px;
+      background: var(--main-purple);
+      color: var(--white);
+      border: none;
+      border-radius: 14px;
+      font-size: 1rem;
+      font-family: var(--font-mincho);
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s;
+      letter-spacing: 0.05em;
+    }
+    .btn-submit:hover {
+      background: var(--accent-yellow);
+      color: var(--main-purple);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px rgba(255,215,0,0.3);
+    }
+    .btn-submit:disabled {
+      background: #ccc;
+      color: #888;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* 成功・失敗通知 */
+    .toast {
+      position: fixed;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      padding: 16px 32px;
+      border-radius: 14px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      opacity: 0;
+      transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+      z-index: 9999;
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+    .toast.success { background: var(--main-purple); color: var(--white); }
+    .toast.error { background: #e53e3e; color: var(--white); }
+
+    @media (max-width: 600px) {
+      .form-row { grid-template-columns: 1fr; }
+      .admin-body { padding: 0 16px 60px; }
+      header.admin-header { padding: 0 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- パスワード画面 -->
+  <div id="password-screen">
+    <div class="pw-box">
+      <div class="pw-logo">星ノ空</div>
+      <div class="pw-sub">ブログ投稿管理</div>
+      <input type="password" class="pw-input" id="pw-input" placeholder="パスワードを入力" />
+      <button class="pw-btn" id="pw-btn">ログイン</button>
+      <div class="pw-error" id="pw-error">パスワードが違います</div>
+    </div>
+  </div>
+
+  <!-- アップロード中オーバーレイ -->
+  <div id="upload-overlay">
+    <div class="upload-spinner"></div>
+    <p style="color: var(--main-purple); font-weight: 700;">画像をアップロード中...</p>
+  </div>
+
+  <!-- 管理画面 -->
+  <div id="admin-panel">
+    <header class="admin-header">
+      <div style="display:flex; align-items:center;">
+        <span class="header-logo">星ノ空</span>
+        <span class="header-subtitle">ブログ投稿</span>
+      </div>
+      <button class="btn-logout" id="btn-logout">ログアウト</button>
+    </header>
+
+    <div class="admin-body">
+      <div class="form-group">
+        <label class="form-label">タイトル</label>
+        <input type="text" class="form-input title-input" id="post-title" placeholder="記事のタイトルを入力" />
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">著者名</label>
+          <input type="text" class="form-input" id="post-author" placeholder="名前を入力" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">グループ</label>
+          <select class="form-select" id="post-group">
+            <option value="広報課">広報課</option>
+            <option value="はなたれパンダ">はなたれパンダ</option>
+            <option value="たまねぎ">たまねぎ</option>
+            <option value="こぐま">こぐま</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">本文</label>
+        <div class="editor-wrapper">
+          <div id="editor"></div>
+        </div>
+      </div>
+
+      <div class="submit-area">
+        <span id="submit-msg"></span>
+        <button class="btn-submit" id="btn-submit">投稿する ✦</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+  <script>
+    // ════════════════════════════════════════
+    //  設定（変更が必要な箇所）
+    // ════════════════════════════════════════
+    const GAS_URL = 'YOUR_GAS_WEBAPP_URL_HERE'; // GASデプロイ後のURLを貼り付け
+    const ADMIN_PASSWORD = '星ノ空2024';         // パスワードを変更してください
+
+    // ════════════════════════════════════════
+    //  パスワード認証
+    // ════════════════════════════════════════
+    const SESSION_KEY = 'hoshinosora_admin';
+
+    function checkSession() {
+      return sessionStorage.getItem(SESSION_KEY) === 'authenticated';
+    }
+
+    function login(password) {
+      if (password === ADMIN_PASSWORD) {
+        sessionStorage.setItem(SESSION_KEY, 'authenticated');
+        showAdminPanel();
+        return true;
+      }
+      return false;
+    }
+
+    function logout() {
+      sessionStorage.removeItem(SESSION_KEY);
+      document.getElementById('admin-panel').style.display = 'none';
+      document.getElementById('password-screen').style.display = 'flex';
+      document.getElementById('pw-input').value = '';
+    }
+
+    function showAdminPanel() {
+      document.getElementById('password-screen').style.display = 'none';
+      document.getElementById('admin-panel').style.display = 'block';
+    }
+
+    // セッション確認
+    if (checkSession()) showAdminPanel();
+
+    document.getElementById('pw-btn').addEventListener('click', () => {
+      const pw = document.getElementById('pw-input').value;
+      const ok = login(pw);
+      document.getElementById('pw-error').style.display = ok ? 'none' : 'block';
+    });
+
+    document.getElementById('pw-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('pw-btn').click();
+    });
+
+    document.getElementById('btn-logout').addEventListener('click', logout);
+
+    // ════════════════════════════════════════
+    //  Quill エディタ初期化
+    // ════════════════════════════════════════
+    const toolbarOptions = [
+      [{ 'header': [2, 3, false] }],
+      ['bold', 'italic', 'underline'],
+      [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+      [{ 'align': [] }],
+      ['image', 'link'],
+      ['clean']
+    ];
+
+    const quill = new Quill('#editor', {
+      theme: 'snow',
+      modules: { toolbar: { container: toolbarOptions, handlers: { image: imageHandler } } },
+      placeholder: '本文を入力してください...'
+    });
+
+    // ════════════════════════════════════════
+    //  画像アップロード
+    // ════════════════════════════════════════
+    function imageHandler() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.click();
+
+      input.onchange = async () => {
+        const file = input.files[0];
+        if (!file) return;
+
+        // ファイルサイズチェック（5MB以下）
+        if (file.size > 5 * 1024 * 1024) {
+          showToast('画像は5MB以下にしてください', 'error');
+          return;
+        }
+
+        showUploadOverlay(true);
+
+        try {
+          const base64 = await fileToBase64(file);
+          const res = await fetch(GAS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({ action: 'uploadImage', imageData: base64 })
+          });
+          const result = await res.json();
+
+          if (result.success) {
+            const range = quill.getSelection() || { index: quill.getLength() };
+            quill.insertEmbed(range.index, 'image', result.url);
+            quill.setSelection(range.index + 1);
+          } else {
+            throw new Error(result.error || 'Upload failed');
+          }
+        } catch (err) {
+          showToast('画像のアップロードに失敗しました', 'error');
+          console.error(err);
+        } finally {
+          showUploadOverlay(false);
+        }
+      };
+    }
+
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function showUploadOverlay(show) {
+      const el = document.getElementById('upload-overlay');
+      el.classList.toggle('active', show);
+    }
+
+    // ════════════════════════════════════════
+    //  投稿送信
+    // ════════════════════════════════════════
+    document.getElementById('btn-submit').addEventListener('click', async () => {
+      const title = document.getElementById('post-title').value.trim();
+      const author = document.getElementById('post-author').value.trim();
+      const group = document.getElementById('post-group').value;
+      const content = quill.root.innerHTML;
+
+      if (!title) { showToast('タイトルを入力してください', 'error'); return; }
+      if (!author) { showToast('著者名を入力してください', 'error'); return; }
+      if (quill.getText().trim().length < 10) {
+        showToast('本文を入力してください', 'error'); return;
+      }
+
+      const btn = document.getElementById('btn-submit');
+      btn.disabled = true;
+      document.getElementById('submit-msg').textContent = '送信中...';
+
+      try {
+        const res = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ action: 'savePost', title, author, group, content })
+        });
+        const result = await res.json();
+
+        if (result.success) {
+          showToast('投稿しました！', 'success');
+          // フォームリセット
+          document.getElementById('post-title').value = '';
+          document.getElementById('post-author').value = '';
+          quill.setContents([]);
+          document.getElementById('submit-msg').textContent = '';
+        } else {
+          throw new Error(result.error || 'Save failed');
+        }
+      } catch (err) {
+        showToast('投稿に失敗しました。もう一度お試しください。', 'error');
+        console.error(err);
+        document.getElementById('submit-msg').textContent = '';
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    // ════════════════════════════════════════
+    //  トースト通知
+    // ════════════════════════════════════════
+    function showToast(message, type = 'success') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = 'toast ' + type;
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => toast.classList.add('show'));
+      });
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+  </script>
+</body>
+</html>
