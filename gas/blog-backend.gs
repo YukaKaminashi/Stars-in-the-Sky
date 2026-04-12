@@ -17,7 +17,7 @@
 
 const SPREADSHEET_ID = '1D1eRCdgn8rIAR5lOXGUrMruJ3heytfqfMKayqcH6LUE';
 const SHEET_NAME = 'posts';
-const DRIVE_FOLDER_ID = 'YOUR_DRIVE_FOLDER_ID_HERE';
+const DRIVE_FOLDER_ID = '1R3KAJcxvTPJWhEa1agin5tuWRTblsinJ';
 
 // ── GET リクエスト ──────────────────────────────
 function doGet(e) {
@@ -137,10 +137,10 @@ function uploadImage(data) {
   const folder = DriveApp.getFolderById(DRIVE_FOLDER_ID);
   const blob = Utilities.newBlob(Utilities.base64Decode(base64Data), mimeType, fileName);
   const file = folder.createFile(blob);
-  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  file.setSharing(DriveApp.Access.ANYONE, DriveApp.Permission.VIEW);
 
   const fileId = file.getId();
-  const url = 'https://drive.google.com/thumbnail?id=' + fileId + '&sz=w1000';
+  const url = 'https://drive.google.com/uc?export=view&id=' + fileId;
 
   return { success: true, url: url };
 }
@@ -156,6 +156,19 @@ function extractFirstImage(html) {
 function stripHtml(html) {
   if (!html) return '';
   return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+}
+
+// ── 既存画像の共有設定を一括修正（一度だけ手動実行）──
+function fixExistingImageSharing() {
+  const folder = DriveApp.getFolderById(DRIVE_FOLDER_ID);
+  const files = folder.getFiles();
+  let count = 0;
+  while (files.hasNext()) {
+    const file = files.next();
+    file.setSharing(DriveApp.Access.ANYONE, DriveApp.Permission.VIEW);
+    count++;
+  }
+  Logger.log(count + ' 件のファイルの共有設定を更新しました');
 }
 
 // ── シート初期化（初回のみ手動実行）─────────────
