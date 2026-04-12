@@ -15,7 +15,7 @@
  * 6. 初回のみ initializeSheet() を手動実行してシートを初期化
  */
 
-const SPREADSHEET_ID = 'YOUR_SPREADSHEET_ID_HERE';
+const SPREADSHEET_ID = '1D1eRCdgn8rIAR5lOXGUrMruJ3heytfqfMKayqcH6LUE';
 const SHEET_NAME = 'posts';
 const DRIVE_FOLDER_ID = 'YOUR_DRIVE_FOLDER_ID_HERE';
 
@@ -80,6 +80,7 @@ function getPosts() {
       // contentは一覧では返さない（軽量化）
       const { content, ...meta } = post;
       meta.excerpt = stripHtml(content).substring(0, 120);
+      meta.thumbnail = extractFirstImage(content);
       posts.push(meta);
     }
   }
@@ -139,9 +140,16 @@ function uploadImage(data) {
   file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
 
   const fileId = file.getId();
-  const url = 'https://drive.google.com/uc?export=view&id=' + fileId;
+  const url = 'https://lh3.googleusercontent.com/d/' + fileId;
 
   return { success: true, url: url };
+}
+
+// ── 最初の画像URL抽出（サムネイル用）────────────
+function extractFirstImage(html) {
+  if (!html) return '';
+  const match = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+  return match ? match[1] : '';
 }
 
 // ── HTML タグ除去（抜粋用）───────────────────────
