@@ -140,7 +140,7 @@ function uploadImage(data) {
   file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
 
   const fileId = file.getId();
-  const url = 'https://lh3.googleusercontent.com/d/' + fileId;
+  const url = 'https://drive.google.com/thumbnail?id=' + fileId + '&sz=w1000';
 
   return { success: true, url: url };
 }

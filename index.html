@@ -163,10 +163,11 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      overflow-y: auto;
       transition: right 0.5s cubic-bezier(0.77, 0.2, 0.05, 1.0);
     }
     .overlay-menu.active { right: 0; }
-    .overlay-menu ul { list-style: none; text-align: center; }
+    .overlay-menu ul { list-style: none; text-align: center; padding: 40px 0; }
     .overlay-menu li {
       margin: 25px 0;
       opacity: 0;
@@ -235,7 +236,7 @@
       position: relative;
       z-index: 2;
       width: 100%;
-      padding: 0 20px;
+      padding: 0 20px 120px;
       display: flex;
       flex-direction: column;
       align-items: center;
