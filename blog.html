@@ -896,6 +896,9 @@
       const text = document.getElementById('reply-text-' + parentId).value.trim();
       if (!name || !text) { alert('名前と返信内容を入力してください。'); return; }
 
+      const btn = document.querySelector(`#reply-form-${parentId} .comment-submit-btn`);
+      if (btn) { btn.disabled = true; btn.textContent = '送信中...'; }
+
       try {
         const res = await fetch(GAS_URL, {
           method: 'POST',
@@ -907,7 +910,10 @@
           const res2 = await fetch(GAS_URL + '?action=getComments&postId=' + encodeURIComponent(postId));
           renderComments(await res2.json(), postId);
         }
-      } catch (e) { alert('返信に失敗しました。'); }
+      } catch (e) {
+        alert('返信に失敗しました。');
+        if (btn) { btn.disabled = false; btn.textContent = '返信する'; }
+      }
     }
 
     // ════════════════════════════════════════
