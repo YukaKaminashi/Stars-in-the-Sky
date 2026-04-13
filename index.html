@@ -93,7 +93,7 @@
       align-items: center;
       text-decoration: none;
       gap: 15px;
-      z-index: 1001; /* メニューの上に出す */
+      z-index: 1002; /* オーバーレイの上に出す */
     }
     .nav-logo-img {
       height: 40px;
@@ -125,7 +125,7 @@
       background: transparent;
       border: none;
       cursor: pointer;
-      z-index: 1001;
+      z-index: 1002;
     }
     .menu-toggle span {
       position: absolute;
@@ -159,7 +159,7 @@
       height: 100vh;
       background: rgba(255, 253, 245, 0.98);
       backdrop-filter: blur(20px);
-      z-index: 999;
+      z-index: 1001;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -184,6 +184,8 @@
     .overlay-menu.active li:nth-child(3) { transition-delay: 0.3s; }
     .overlay-menu.active li:nth-child(4) { transition-delay: 0.4s; }
     .overlay-menu.active li:nth-child(5) { transition-delay: 0.5s; }
+    .overlay-menu.active li:nth-child(6) { transition-delay: 0.6s; }
+    .overlay-menu.active li:nth-child(7) { transition-delay: 0.7s; }
 
     .overlay-menu a {
       font-family: var(--font-mincho);
@@ -234,9 +236,9 @@
 
     .hero-content {
       position: relative;
-      z-index: 2;
+      z-index: 4;
       width: 100%;
-      padding: 0 20px 120px;
+      padding: 0 20px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -705,20 +707,9 @@
         <span class="section-label">News</span>
         <h2 class="shippori section-title">お知らせ</h2>
       </div>
-      <!-- ▼ ここにお知らせを追加してください ▼ -->
-      <ul class="news-list fade-in">
-        <li class="news-item">
-          <span class="news-date">2026.04.12</span>
-          <span class="news-badge">運営</span>
-          <span class="news-text">小隊集結期間が終了しました！新執行部体制のもと、よりよい星ノ空をつくっていきます！</span>
-        </li>
-        <li class="news-item">
-          <span class="news-date">2026.04.12</span>
-          <span class="news-badge">Discord</span>
-          <span class="news-text">Discord楽しいですよ！ぜひ参加を！！<a href="https://discord.gg/T3rfveJtf6" target="_blank">こちらから参加できます。</a></span>
-        </li>
+      <ul id="news-list-top" class="news-list fade-in">
+        <li class="news-item" style="color: var(--text-muted); font-size: 0.9rem;">読み込み中...</li>
       </ul>
-      <!-- ▲ ここまで ▲ -->
     </div>
   </section>
 
@@ -999,6 +990,34 @@
     }
 
     loadBlogPreview();
+
+    // ── ニューストップ取得 ──
+    async function loadNewsTop() {
+      const list = document.getElementById('news-list-top');
+      try {
+        const res = await fetch(BLOG_GAS_URL + '?action=getNews');
+        const items = await res.json();
+        if (!Array.isArray(items) || items.length === 0) {
+          list.innerHTML = '<li class="news-item" style="color:var(--text-muted);font-size:0.9rem;">お知らせはまだありません。</li>';
+          return;
+        }
+        list.innerHTML = items.slice(0, 5).map(item => {
+          const linkText = item.text ? escHtml(item.text) : '';
+          const textContent = item.link
+            ? `<a href="${escHtml(item.link)}" target="_blank" rel="noopener">${linkText}</a>`
+            : linkText;
+          return `<li class="news-item">
+            <span class="news-date">${escHtml(item.date)}</span>
+            <span class="news-badge">${escHtml(item.badge)}</span>
+            <span class="news-text">${textContent}</span>
+          </li>`;
+        }).join('');
+      } catch (e) {
+        list.innerHTML = '<li class="news-item" style="color:var(--text-muted);font-size:0.9rem;">お知らせの読み込みに失敗しました。</li>';
+      }
+    }
+
+    loadNewsTop();
   </script>
 </body>
 </html>
