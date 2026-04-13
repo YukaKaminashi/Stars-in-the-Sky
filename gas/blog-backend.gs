@@ -16,6 +16,8 @@
 const SPREADSHEET_ID = '1D1eRCdgn8rIAR5lOXGUrMruJ3heytfqfMKayqcH6LUE';
 const SHEET_NAME = 'posts';
 const NEWS_SHEET_NAME = 'news';
+const MEMBERS_SHEET_NAME = 'members';
+const SCHEDULE_SHEET_NAME = 'schedule';
 
 // ── GET リクエスト ──────────────────────────────
 function doGet(e) {
@@ -30,6 +32,10 @@ function doGet(e) {
     result = getNews();
   } else if (action === 'getLikes') {
     result = getLikes(e.parameter.id);
+  } else if (action === 'getMembers') {
+    result = getMembers(e.parameter.category);
+  } else if (action === 'getSchedule') {
+    result = getSchedule();
   } else {
     result = { error: 'Invalid action' };
   }
@@ -59,6 +65,14 @@ function doPost(e) {
     result = deleteNews(data);
   } else if (data.action === 'likePost') {
     result = likePost(data);
+  } else if (data.action === 'saveMember') {
+    result = saveMember(data);
+  } else if (data.action === 'deleteMember') {
+    result = deleteMember(data);
+  } else if (data.action === 'saveSchedule') {
+    result = saveSchedule(data);
+  } else if (data.action === 'deleteSchedule') {
+    result = deleteSchedule(data);
   } else {
     result = { error: 'Invalid action' };
   }
@@ -225,6 +239,116 @@ function initializeSheet() {
     sheet.getRange(1, 1, 1, 7).setFontWeight('bold');
   }
   Logger.log('postsシートの初期化完了');
+}
+
+// ── メンバー資料一覧取得 ──────────────────────────
+function getMembers(category) {
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(MEMBERS_SHEET_NAME);
+  if (!sheet) return [];
+  const data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return [];
+
+  const headers = data[0];
+  const items = [];
+
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    const item = {};
+    headers.forEach((h, j) => { item[h] = row[j]; });
+    if (!item.published) continue;
+    if (category && category !== 'all' && item.category !== category) continue;
+    items.push(item);
+  }
+
+  items.sort((a, b) => new Date(b.date) - new Date(a.date));
+  return items;
+}
+
+// ── メンバー資料保存 ──────────────────────────────
+function saveMember(data) {
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(MEMBERS_SHEET_NAME);
+  const id = new Date().getTime();
+  sheet.appendRow([id, data.category, data.title, data.link, data.date, true]);
+  return { success: true, id: id };
+}
+
+// ── メンバー資料削除 ──────────────────────────────
+function deleteMember(data) {
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(MEMBERS_SHEET_NAME);
+  const rows = sheet.getDataRange().getValues();
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][0]) === String(data.id)) {
+      sheet.deleteRow(i + 1);
+      return { success: true };
+    }
+  }
+  return { error: 'Not found' };
+}
+
+// ── スケジュール一覧取得 ──────────────────────────
+function getSchedule() {
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(SCHEDULE_SHEET_NAME);
+  if (!sheet) return [];
+  const data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return [];
+
+  const headers = data[0];
+  const items = [];
+
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    const item = {};
+    headers.forEach((h, j) => { item[h] = row[j]; });
+    if (item.published) items.push(item);
+  }
+
+  items.sort((a, b) => new Date(b.date) - new Date(a.date));
+  return items;
+}
+
+// ── スケジュール保存 ──────────────────────────────
+function saveSchedule(data) {
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(SCHEDULE_SHEET_NAME);
+  const id = new Date().getTime();
+  sheet.appendRow([id, data.date, data.text, true]);
+  return { success: true, id: id };
+}
+
+// ── スケジュール削除 ──────────────────────────────
+function deleteSchedule(data) {
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(SCHEDULE_SHEET_NAME);
+  const rows = sheet.getDataRange().getValues();
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][0]) === String(data.id)) {
+      sheet.deleteRow(i + 1);
+      return { success: true };
+    }
+  }
+  return { error: 'Not found' };
+}
+
+// ── メンバー資料シート初期化（初回のみ手動実行）────
+function initializeMembersSheet() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let sheet = ss.getSheetByName(MEMBERS_SHEET_NAME);
+  if (!sheet) sheet = ss.insertSheet(MEMBERS_SHEET_NAME);
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(['id', 'category', 'title', 'link', 'date', 'published']);
+    sheet.getRange(1, 1, 1, 6).setFontWeight('bold');
+  }
+  Logger.log('membersシートの初期化完了');
+}
+
+// ── スケジュールシート初期化（初回のみ手動実行）────
+function initializeScheduleSheet() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let sheet = ss.getSheetByName(SCHEDULE_SHEET_NAME);
+  if (!sheet) sheet = ss.insertSheet(SCHEDULE_SHEET_NAME);
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(['id', 'date', 'text', 'published']);
+    sheet.getRange(1, 1, 1, 4).setFontWeight('bold');
+  }
+  Logger.log('scheduleシートの初期化完了');
 }
 
 // ── ニュースシート初期化（初回のみ手動実行）───────

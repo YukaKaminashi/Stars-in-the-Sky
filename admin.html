@@ -379,6 +379,7 @@
         <div class="admin-tabs">
           <button class="tab-btn active" id="tab-blog" onclick="switchTab('blog')">ブログ投稿</button>
           <button class="tab-btn" id="tab-news" onclick="switchTab('news')">ニュース管理</button>
+          <button class="tab-btn" id="tab-members" onclick="switchTab('members')">メンバー管理</button>
         </div>
       </div>
       <div style="display:flex; align-items:center; gap:12px;">
@@ -453,6 +454,82 @@
     </div>
   </div>
 
+  <!-- メンバー管理パネル -->
+  <div id="panel-members" class="admin-body" style="display:none;">
+
+    <!-- メンバー管理用パスワード再認証 -->
+    <div id="members-auth-wall" style="text-align:center; padding:80px 20px;">
+      <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:20px;">メンバー管理には別のパスワードが必要です</p>
+      <div style="max-width:320px; margin:0 auto;">
+        <input type="password" class="form-input" id="members-pw-input" placeholder="メンバー管理パスワード" style="margin-bottom:12px;" />
+        <button class="btn-submit" id="members-pw-btn" style="width:100%; padding:12px;">認証する</button>
+        <div id="members-pw-error" style="color:#e53e3e; font-size:0.85rem; margin-top:10px; display:none;">パスワードが違います</div>
+      </div>
+    </div>
+
+    <!-- 認証後コンテンツ -->
+    <div id="members-panel-content" style="display:none;">
+
+      <!-- スケジュール管理 -->
+      <div style="margin-bottom:48px;">
+        <div class="form-label" style="font-size:1rem; margin-bottom:20px;">スケジュール管理</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">日付表示テキスト</label>
+            <input type="text" class="form-input" id="sch-date" placeholder="例: 2026.05.10" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">内容</label>
+            <input type="text" class="form-input" id="sch-text" placeholder="例: 第3回総務会" />
+          </div>
+        </div>
+        <div class="submit-area">
+          <button class="btn-submit" id="btn-sch-add">追加する ✦</button>
+        </div>
+        <div class="news-existing">
+          <div class="news-existing-title">現在のスケジュール</div>
+          <div id="sch-list-admin">読み込み中...</div>
+        </div>
+      </div>
+
+      <hr style="border:none; border-top:1px solid var(--purple-soft); margin-bottom:48px;">
+
+      <!-- 資料管理 -->
+      <div>
+        <div class="form-label" style="font-size:1rem; margin-bottom:20px;">資料管理</div>
+        <div class="form-group">
+          <label class="form-label">カテゴリ</label>
+          <select class="form-select" id="doc-category">
+            <option value="総則">総則</option>
+            <option value="スライド資料">スライド資料</option>
+            <option value="組織図">組織図</option>
+            <option value="議事録">議事録</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">タイトル</label>
+          <input type="text" class="form-input" id="doc-title" placeholder="資料のタイトル" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Google Drive URL</label>
+          <input type="url" class="form-input" id="doc-link" placeholder="https://drive.google.com/..." />
+        </div>
+        <div class="form-group">
+          <label class="form-label">日付</label>
+          <input type="text" class="form-input" id="doc-date" placeholder="例: 2026.04.13" />
+        </div>
+        <div class="submit-area">
+          <button class="btn-submit" id="btn-doc-add">追加する ✦</button>
+        </div>
+        <div class="news-existing">
+          <div class="news-existing-title">現在の資料一覧</div>
+          <div id="doc-list-admin">読み込み中...</div>
+        </div>
+      </div>
+
+    </div><!-- /members-panel-content -->
+  </div>
+
   <div class="toast" id="toast"></div>
 
   <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
@@ -460,8 +537,10 @@
     // ════════════════════════════════════════
     //  設定（変更が必要な箇所）
     // ════════════════════════════════════════
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwJBQ897qqOhTjvLeqRcCTSFllFgKOHAGQwtSXJ38hZey4NXTlBYD1ZpMWvvgNpj_BZ0w/exec'; // GASデプロイ後のURLを貼り付け
-    const ADMIN_PASSWORD = 'hoshinosorahoshinosora';         // パスワードを変更してください
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwJBQ897qqOhTjvLeqRcCTSFllFgKOHAGQwtSXJ38hZey4NXTlBYD1ZpMWvvgNpj_BZ0w/exec';
+    const ADMIN_PASSWORD = 'hoshinosorahoshinosora';
+    const MEMBERS_ADMIN_PASSWORD = 'hoshinosoraadmin';
+    const MEMBERS_ADMIN_SESSION_KEY = 'hoshinosora_members_admin';
 
     // ════════════════════════════════════════
     //  パスワード認証
@@ -566,9 +645,166 @@
     function switchTab(tab) {
       document.getElementById('panel-blog').style.display = tab === 'blog' ? 'block' : 'none';
       document.getElementById('panel-news').style.display = tab === 'news' ? 'block' : 'none';
+      document.getElementById('panel-members').style.display = tab === 'members' ? 'block' : 'none';
       document.getElementById('tab-blog').classList.toggle('active', tab === 'blog');
       document.getElementById('tab-news').classList.toggle('active', tab === 'news');
+      document.getElementById('tab-members').classList.toggle('active', tab === 'members');
       if (tab === 'news') loadNewsList();
+      if (tab === 'members') initMembersTab();
+    }
+
+    // ════════════════════════════════════════
+    //  メンバー管理タブ
+    // ════════════════════════════════════════
+    function initMembersTab() {
+      if (sessionStorage.getItem(MEMBERS_ADMIN_SESSION_KEY) === 'ok') {
+        showMembersPanel();
+      }
+    }
+
+    document.getElementById('members-pw-btn').addEventListener('click', () => {
+      const pw = document.getElementById('members-pw-input').value;
+      if (pw === MEMBERS_ADMIN_PASSWORD) {
+        sessionStorage.setItem(MEMBERS_ADMIN_SESSION_KEY, 'ok');
+        document.getElementById('members-pw-error').style.display = 'none';
+        showMembersPanel();
+      } else {
+        document.getElementById('members-pw-error').style.display = 'block';
+      }
+    });
+    document.getElementById('members-pw-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('members-pw-btn').click();
+    });
+
+    function showMembersPanel() {
+      document.getElementById('members-auth-wall').style.display = 'none';
+      document.getElementById('members-panel-content').style.display = 'block';
+      loadSchList();
+      loadDocList();
+    }
+
+    // ── スケジュール ──
+    async function loadSchList() {
+      const container = document.getElementById('sch-list-admin');
+      container.innerHTML = '読み込み中...';
+      try {
+        const res = await fetch(GAS_URL + '?action=getSchedule');
+        const items = await res.json();
+        if (!Array.isArray(items) || items.length === 0) {
+          container.innerHTML = '<p style="color:var(--text-muted);font-size:0.9rem;">まだ登録がありません。</p>';
+          return;
+        }
+        container.innerHTML = items.map(item => `
+          <div class="news-row">
+            <span class="news-row-date">${escHtml(String(item.date))}</span>
+            <span class="news-row-text" style="flex:1;">${escHtml(item.text)}</span>
+            <button class="btn-delete" onclick="deleteSchItem('${escHtml(String(item.id))}')">削除</button>
+          </div>`).join('');
+      } catch {
+        container.innerHTML = '<p style="color:#e53e3e;font-size:0.9rem;">読み込みに失敗しました。</p>';
+      }
+    }
+
+    document.getElementById('btn-sch-add').addEventListener('click', async () => {
+      const date = document.getElementById('sch-date').value.trim();
+      const text = document.getElementById('sch-text').value.trim();
+      if (!date || !text) { showToast('日付と内容を入力してください', 'error'); return; }
+
+      const btn = document.getElementById('btn-sch-add');
+      btn.disabled = true;
+      try {
+        const res = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ action: 'saveSchedule', date, text })
+        });
+        const result = await res.json();
+        if (result.success) {
+          showToast('スケジュールを追加しました', 'success');
+          document.getElementById('sch-date').value = '';
+          document.getElementById('sch-text').value = '';
+          loadSchList();
+        } else throw new Error();
+      } catch { showToast('追加に失敗しました', 'error'); }
+      btn.disabled = false;
+    });
+
+    async function deleteSchItem(id) {
+      if (!confirm('このスケジュールを削除しますか？')) return;
+      try {
+        const res = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ action: 'deleteSchedule', id })
+        });
+        const result = await res.json();
+        if (result.success) { showToast('削除しました', 'success'); loadSchList(); }
+        else throw new Error();
+      } catch { showToast('削除に失敗しました', 'error'); }
+    }
+
+    // ── 資料 ──
+    async function loadDocList() {
+      const container = document.getElementById('doc-list-admin');
+      container.innerHTML = '読み込み中...';
+      try {
+        const res = await fetch(GAS_URL + '?action=getMembers');
+        const items = await res.json();
+        if (!Array.isArray(items) || items.length === 0) {
+          container.innerHTML = '<p style="color:var(--text-muted);font-size:0.9rem;">まだ登録がありません。</p>';
+          return;
+        }
+        container.innerHTML = items.map(item => `
+          <div class="news-row">
+            <span class="news-row-date">${escHtml(String(item.date))}</span>
+            <span class="news-row-badge">${escHtml(item.category)}</span>
+            <span class="news-row-text">${escHtml(item.title)}</span>
+            <button class="btn-delete" onclick="deleteDocItem('${escHtml(String(item.id))}')">削除</button>
+          </div>`).join('');
+      } catch {
+        container.innerHTML = '<p style="color:#e53e3e;font-size:0.9rem;">読み込みに失敗しました。</p>';
+      }
+    }
+
+    document.getElementById('btn-doc-add').addEventListener('click', async () => {
+      const category = document.getElementById('doc-category').value;
+      const title = document.getElementById('doc-title').value.trim();
+      const link = document.getElementById('doc-link').value.trim();
+      const date = document.getElementById('doc-date').value.trim();
+      if (!title || !link || !date) { showToast('タイトル・URL・日付を入力してください', 'error'); return; }
+
+      const btn = document.getElementById('btn-doc-add');
+      btn.disabled = true;
+      try {
+        const res = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ action: 'saveMember', category, title, link, date })
+        });
+        const result = await res.json();
+        if (result.success) {
+          showToast('資料を追加しました', 'success');
+          document.getElementById('doc-title').value = '';
+          document.getElementById('doc-link').value = '';
+          document.getElementById('doc-date').value = '';
+          loadDocList();
+        } else throw new Error();
+      } catch { showToast('追加に失敗しました', 'error'); }
+      btn.disabled = false;
+    });
+
+    async function deleteDocItem(id) {
+      if (!confirm('この資料を削除しますか？')) return;
+      try {
+        const res = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ action: 'deleteMember', id })
+        });
+        const result = await res.json();
+        if (result.success) { showToast('削除しました', 'success'); loadDocList(); }
+        else throw new Error();
+      } catch { showToast('削除に失敗しました', 'error'); }
     }
 
     // ════════════════════════════════════════
