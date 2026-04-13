@@ -74,7 +74,7 @@
       width: 100%;
       height: 100px;
       background: transparent;
-      z-index: 1000;
+      z-index: 1002; /* overlay-menu(1001)より上に保つ */
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -117,20 +117,21 @@
       text-shadow: none;
     }
 
-    /* ハンバーガーボタン */
+    /* ハンバーガーボタン（タップ領域を44×44pxに拡張） */
     .menu-toggle {
       position: relative;
-      width: 34px;
-      height: 22px;
+      width: 44px;
+      height: 44px;
       background: transparent;
       border: none;
       cursor: pointer;
       z-index: 1002;
+      -webkit-tap-highlight-color: transparent;
     }
     .menu-toggle span {
       position: absolute;
-      left: 0;
-      width: 100%;
+      left: 5px;   /* (44-34)/2 = 5px */
+      width: 34px;
       height: 2px;
       background-color: var(--bg-color);
       transition: all 0.3s ease;
@@ -141,14 +142,14 @@
       background-color: var(--main-purple);
       box-shadow: none;
     }
-    .menu-toggle span:nth-child(1) { top: 0; }
-    .menu-toggle span:nth-child(2) { top: 10px; }
-    .menu-toggle span:nth-child(3) { top: 20px; }
+    .menu-toggle span:nth-child(1) { top: 11px; }
+    .menu-toggle span:nth-child(2) { top: 21px; }
+    .menu-toggle span:nth-child(3) { top: 31px; }
 
     /* ハンバーガーのアニメーション（バツ印へ） */
-    .menu-toggle.active span:nth-child(1) { top: 10px; transform: rotate(45deg); }
+    .menu-toggle.active span:nth-child(1) { top: 21px; transform: rotate(45deg); }
     .menu-toggle.active span:nth-child(2) { opacity: 0; }
-    .menu-toggle.active span:nth-child(3) { top: 10px; transform: rotate(-45deg); }
+    .menu-toggle.active span:nth-child(3) { top: 21px; transform: rotate(-45deg); }
 
     /* オーバーレイメニュー */
     .overlay-menu {
@@ -156,20 +157,36 @@
       top: 0;
       right: -100%;
       width: 100%;
-      height: 100vh;
+      height: 100%;
+      min-height: 100vh;
       background: rgba(255, 253, 245, 0.98);
       backdrop-filter: blur(20px);
       z-index: 1001;
       display: flex;
-      align-items: center;
+      align-items: flex-start;  /* スクロール対応のため上揃えに変更 */
       justify-content: center;
       overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
       transition: right 0.5s cubic-bezier(0.77, 0.2, 0.05, 1.0);
+      pointer-events: none; /* 非アクティブ時は下の要素の操作を妨げない */
     }
-    .overlay-menu.active { right: 0; }
-    .overlay-menu ul { list-style: none; text-align: center; padding: 40px 0; }
+    .overlay-menu.active {
+      right: 0;
+      pointer-events: auto;
+    }
+    /* ul自体にpadding-topでナビ分のスペースを確保し、縦中央寄りに見せる */
+    .overlay-menu ul {
+      list-style: none;
+      text-align: center;
+      padding: 100px 40px 80px;
+      width: 100%;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
     .overlay-menu li {
-      margin: 25px 0;
+      margin: 20px 0;
       opacity: 0;
       transform: translateY(20px);
       transition: all 0.4s ease;
@@ -194,6 +211,7 @@
       text-decoration: none;
       font-weight: 800;
       display: inline-block;
+      padding: 8px 20px;   /* タップ領域を拡張 */
       transition: color 0.3s, transform 0.3s;
     }
     .overlay-menu a:hover {
@@ -208,6 +226,64 @@
       color: var(--text-muted);
       letter-spacing: 0.2em;
       margin-top: 5px;
+    }
+
+    /* ── ニュース詳細モーダル ── */
+    .news-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(51, 34, 68, 0.5);
+      z-index: 2000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .news-modal.active { display: flex; }
+    .news-modal-content {
+      background: var(--white);
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 560px;
+      width: 100%;
+      max-height: 80vh;
+      overflow-y: auto;
+      position: relative;
+      box-shadow: 0 20px 60px rgba(107,56,163,0.18);
+    }
+    .news-modal-close {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      background: none;
+      border: none;
+      font-size: 1.4rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 8px;
+      line-height: 1;
+      transition: color 0.2s;
+    }
+    .news-modal-close:hover { color: var(--main-purple); }
+    .news-modal-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .news-modal-body {
+      font-size: 0.95rem;
+      line-height: 1.9;
+      color: var(--text-dark);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .news-modal-body a {
+      color: var(--main-purple);
+      font-weight: 700;
+    }
+    @media (max-width: 600px) {
+      .news-modal-content { padding: 28px 20px; }
     }
 
     /* ── HERO（背景＆タイトル） ── */
@@ -639,6 +715,10 @@
       .hero-wave svg { height: 40px; }
       .blog-preview-grid { grid-template-columns: 1fr; }
       .news-item { flex-direction: column; gap: 8px; }
+      /* セクション余白をスマホ向けに縮小 */
+      .section { padding: 80px 0; }
+      /* Heroの波装飾とコンテンツの被りを軽減 */
+      .hero { padding-bottom: 60px; }
     }
   </style>
 </head>
@@ -886,6 +966,18 @@
     </div>
   </footer>
 
+  <!-- ニュース詳細モーダル -->
+  <div class="news-modal" id="news-modal">
+    <div class="news-modal-content">
+      <button class="news-modal-close" id="news-modal-close" aria-label="閉じる">×</button>
+      <div class="news-modal-header">
+        <span class="news-date" id="modal-news-date"></span>
+        <span class="news-badge" id="modal-news-badge"></span>
+      </div>
+      <div class="news-modal-body" id="modal-news-body"></div>
+    </div>
+  </div>
+
   <!-- スクリプト：メニュー開閉とスクロールアニメーション -->
   <script>
     // ハンバーガーメニューの開閉処理
@@ -907,14 +999,31 @@
       }
     });
 
+    // メニューを閉じる共通処理
+    function closeMenu() {
+      menuToggle.classList.remove('active');
+      overlayMenu.classList.remove('active');
+      document.body.classList.remove('menu-open');
+      document.body.style.overflow = '';
+    }
+
     // メニュー内のリンクをクリックしたらメニューを閉じる
     menuLinks.forEach(link => {
-      link.addEventListener('click', () => {
-        menuToggle.classList.remove('active');
-        overlayMenu.classList.remove('active');
-        document.body.classList.remove('menu-open');
-        document.body.style.overflow = '';
-      });
+      link.addEventListener('click', closeMenu);
+    });
+
+    // ESCキーでメニューを閉じる
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && overlayMenu.classList.contains('active')) {
+        closeMenu();
+      }
+    });
+
+    // メニューの背景（ul以外）をクリックして閉じる
+    overlayMenu.addEventListener('click', (e) => {
+      if (e.target === overlayMenu) {
+        closeMenu();
+      }
     });
 
     // スクロール時のナビゲーションバーのスタイル変更
@@ -993,30 +1102,68 @@
     loadBlogPreview();
 
     // ── ニューストップ取得 ──
+    let newsItems = [];
+
     async function loadNewsTop() {
       const list = document.getElementById('news-list-top');
       try {
         const res = await fetch(BLOG_GAS_URL + '?action=getNews');
-        const items = await res.json();
-        if (!Array.isArray(items) || items.length === 0) {
+        newsItems = await res.json();
+        if (!Array.isArray(newsItems) || newsItems.length === 0) {
           list.innerHTML = '<li class="news-item" style="color:var(--text-muted);font-size:0.9rem;">お知らせはまだありません。</li>';
           return;
         }
-        list.innerHTML = items.slice(0, 5).map(item => {
-          const linkText = item.text ? escHtml(item.text) : '';
-          const textContent = item.link
-            ? `<a href="${escHtml(item.link)}" target="_blank" rel="noopener">${linkText}</a>`
-            : linkText;
-          return `<li class="news-item">
+        const displayed = newsItems.slice(0, 5);
+        list.innerHTML = displayed.map((item, idx) => {
+          // 本文の1行目（改行前）だけ一覧に表示
+          const firstLine = escHtml((item.text || '').split('\n')[0]);
+          return `<li class="news-item" data-idx="${idx}" style="cursor:pointer;">
             <span class="news-date">${escHtml(item.date)}</span>
             <span class="news-badge">${escHtml(item.badge)}</span>
-            <span class="news-text">${textContent}</span>
+            <span class="news-text">${firstLine}</span>
           </li>`;
         }).join('');
+
+        // クリックでモーダル表示
+        list.querySelectorAll('.news-item[data-idx]').forEach(el => {
+          el.addEventListener('click', () => {
+            openNewsModal(displayed[Number(el.dataset.idx)]);
+          });
+        });
       } catch (e) {
         list.innerHTML = '<li class="news-item" style="color:var(--text-muted);font-size:0.9rem;">お知らせの読み込みに失敗しました。</li>';
       }
     }
+
+    // ── ニュース詳細モーダル ──
+    function openNewsModal(item) {
+      document.getElementById('modal-news-date').textContent = item.date || '';
+      document.getElementById('modal-news-badge').textContent = item.badge || '';
+
+      const body = document.getElementById('modal-news-body');
+      // 改行を保持して表示（pre-wrapをCSSで設定済み）
+      let html = escHtml(item.text || '');
+      if (item.link) {
+        html += `\n\n<a href="${escHtml(item.link)}" target="_blank" rel="noopener">詳細はこちら →</a>`;
+      }
+      body.innerHTML = html;
+
+      document.getElementById('news-modal').classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeNewsModal() {
+      document.getElementById('news-modal').classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    document.getElementById('news-modal-close').addEventListener('click', closeNewsModal);
+    document.getElementById('news-modal').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('news-modal')) closeNewsModal();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeNewsModal();
+    });
 
     loadNewsTop();
   </script>

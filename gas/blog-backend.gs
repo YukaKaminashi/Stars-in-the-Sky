@@ -28,6 +28,8 @@ function doGet(e) {
     result = getPost(e.parameter.id);
   } else if (action === 'getNews') {
     result = getNews();
+  } else if (action === 'getLikes') {
+    result = getLikes(e.parameter.id);
   } else {
     result = { error: 'Invalid action' };
   }
@@ -55,6 +57,8 @@ function doPost(e) {
     result = saveNews(data);
   } else if (data.action === 'deleteNews') {
     result = deleteNews(data);
+  } else if (data.action === 'likePost') {
+    result = likePost(data);
   } else {
     result = { error: 'Invalid action' };
   }
@@ -114,6 +118,46 @@ function savePost(data) {
 
   sheet.appendRow([id, data.title, data.author, data.group, data.content, date, true]);
   return { success: true, id: id };
+}
+
+// ── いいね数取得 ─────────────────────────────────
+function getLikes(id) {
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(SHEET_NAME);
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+  const likesCol = headers.indexOf('likes');
+  if (likesCol === -1) return { likes: 0 };
+
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]) === String(id)) {
+      return { likes: Number(data[i][likesCol]) || 0 };
+    }
+  }
+  return { likes: 0 };
+}
+
+// ── いいね追加 ────────────────────────────────────
+function likePost(data) {
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(SHEET_NAME);
+  const range = sheet.getDataRange();
+  const values = range.getValues();
+  const headers = values[0];
+  let likesCol = headers.indexOf('likes');
+
+  // likes列がなければ追加
+  if (likesCol === -1) {
+    likesCol = headers.length;
+    sheet.getRange(1, likesCol + 1).setValue('likes');
+  }
+
+  for (let i = 1; i < values.length; i++) {
+    if (String(values[i][0]) === String(data.id)) {
+      const current = Number(values[i][likesCol]) || 0;
+      sheet.getRange(i + 1, likesCol + 1).setValue(current + 1);
+      return { success: true, likes: current + 1 };
+    }
+  }
+  return { error: 'Not found' };
 }
 
 // ── ニュース一覧取得 ─────────────────────────────

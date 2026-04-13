@@ -20,12 +20,6 @@
       --font-gothic: 'Zen Kaku Gothic New', sans-serif;
     }
 
-    /* ── 各グループカラー ── */
-    --color-広報課: #6B38A3;
-    --color-はなたれパンダ: #E75480;
-    --color-たまねぎ: #2E8B57;
-    --color-こぐま: #D2691E;
-
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html { scroll-behavior: smooth; }
     body {
@@ -35,7 +29,7 @@
       line-height: 1.8;
     }
 
-    /* ── ナビ（index.htmlと共通） ── */
+    /* ── ナビ ── */
     nav {
       position: fixed;
       top: 0;
@@ -49,6 +43,11 @@
       align-items: center;
       justify-content: space-between;
       padding: 0 5vw;
+    }
+    .nav-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
     }
     .logo-container {
       display: flex;
@@ -149,8 +148,8 @@
     .post-card {
       background: var(--white);
       border-radius: 20px;
-      padding: 32px 36px;
-      margin-bottom: 24px;
+      padding: 28px 36px;
+      margin-bottom: 20px;
       box-shadow: 0 4px 20px rgba(107,56,163,0.06);
       cursor: pointer;
       transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
@@ -166,12 +165,13 @@
     .post-card[data-group="はなたれパンダ"] { border-left-color: #E75480; }
     .post-card[data-group="たまねぎ"] { border-left-color: #2E8B57; }
     .post-card[data-group="こぐま"] { border-left-color: #D2691E; }
+    .post-card[data-group="国主"] { border-left-color: #B8860B; }
 
     .post-meta {
       display: flex;
       align-items: center;
       gap: 12px;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
     }
     .post-group-badge {
       font-size: 0.75rem;
@@ -191,25 +191,32 @@
     .post-card[data-group="こぐま"] .post-group-badge {
       background: #f5ede0; color: #D2691E;
     }
+    .post-card[data-group="国主"] .post-group-badge {
+      background: #FFF3CD; color: #B8860B;
+    }
     .post-author { font-size: 0.9rem; font-weight: 700; color: var(--text-dark); }
     .post-date { font-size: 0.8rem; color: var(--text-muted); margin-left: auto; }
 
     .post-title {
       font-family: var(--font-mincho);
-      font-size: 1.3rem;
+      font-size: 1.25rem;
       font-weight: 700;
       color: var(--text-dark);
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       line-height: 1.5;
     }
     .post-excerpt {
       font-size: 0.9rem;
       color: var(--text-muted);
       line-height: 1.7;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 3;
+      overflow: hidden;
     }
     .post-readmore {
       display: inline-block;
-      margin-top: 14px;
+      margin-top: 12px;
       font-size: 0.8rem;
       font-weight: 700;
       color: var(--main-purple);
@@ -291,6 +298,48 @@
     .detail-content .ql-align-center { text-align: center; }
     .detail-content .ql-align-right { text-align: right; }
 
+    /* ── いいねエリア ── */
+    .like-area {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-top: 48px;
+      padding-top: 32px;
+      border-top: 1px solid var(--purple-soft);
+    }
+    .like-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 24px;
+      border-radius: 100px;
+      border: 2px solid #e0d8f0;
+      background: var(--white);
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      font-family: var(--font-gothic);
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.25s;
+      user-select: none;
+    }
+    .like-btn:hover:not(:disabled) {
+      border-color: var(--main-purple);
+      color: var(--main-purple);
+    }
+    .like-btn.liked {
+      background: var(--main-purple);
+      border-color: var(--main-purple);
+      color: var(--white);
+    }
+    .like-btn:disabled {
+      cursor: default;
+    }
+    .like-count {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
     /* ── ローディング・空状態 ── */
     .loading-area, .empty-area {
       text-align: center;
@@ -317,7 +366,7 @@
     }
 
     @media (max-width: 600px) {
-      .post-card { padding: 24px 20px; }
+      .post-card { padding: 20px 18px; }
       #post-list, #post-detail { padding: 0 16px 80px; }
       .filter-area { padding: 0 16px; }
     }
@@ -327,11 +376,13 @@
 
   <!-- ナビゲーション -->
   <nav>
-    <a href="index.html" class="logo-container">
-      <img src="https://raw.githubusercontent.com/YukaKaminashi/Stars-in-the-Sky/main/logo.hoshinosora.webp" alt="星ノ空" class="nav-logo-img" />
-      <span class="logo-text">星ノ空</span>
-    </a>
-    <span class="nav-blog-label">BLOG</span>
+    <div class="nav-left">
+      <a href="index.html" class="logo-container">
+        <img src="https://raw.githubusercontent.com/YukaKaminashi/Stars-in-the-Sky/main/logo.hoshinosora.webp" alt="星ノ空" class="nav-logo-img" />
+        <span class="logo-text">星ノ空</span>
+      </a>
+      <span class="nav-blog-label">BLOG</span>
+    </div>
     <a href="admin.html" class="btn-write">✦ 投稿する</a>
   </nav>
 
@@ -348,6 +399,7 @@
     <button class="filter-btn" data-filter="はなたれパンダ">はなたれパンダ</button>
     <button class="filter-btn" data-filter="たまねぎ">たまねぎ</button>
     <button class="filter-btn" data-filter="こぐま">こぐま</button>
+    <button class="filter-btn" data-filter="国主">国主</button>
   </div>
 
   <!-- 投稿一覧 -->
@@ -364,6 +416,13 @@
     <div class="detail-meta" id="detail-meta"></div>
     <h1 class="detail-title" id="detail-title"></h1>
     <div class="detail-content" id="detail-content"></div>
+    <div class="like-area" id="like-area" style="display:none;">
+      <button class="like-btn" id="like-btn">
+        <span id="like-icon">♡</span>
+        <span>いいね</span>
+      </button>
+      <span class="like-count" id="like-count"></span>
+    </div>
   </div>
 
   <footer>
@@ -378,13 +437,38 @@
     // ════════════════════════════════════════
     //  設定
     // ════════════════════════════════════════
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwJBQ897qqOhTjvLeqRcCTSFllFgKOHAGQwtSXJ38hZey4NXTlBYD1ZpMWvvgNpj_BZ0w/exec'; // GASデプロイ後のURLを貼り付け
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwJBQ897qqOhTjvLeqRcCTSFllFgKOHAGQwtSXJ38hZey4NXTlBYD1ZpMWvvgNpj_BZ0w/exec';
 
     // ════════════════════════════════════════
     //  状態管理
     // ════════════════════════════════════════
     let allPosts = [];
     let currentFilter = 'all';
+    let currentPostId = null;
+
+    // ════════════════════════════════════════
+    //  いいね：LocalStorage管理
+    // ════════════════════════════════════════
+    const LIKES_KEY = 'hoshinosora_likes';
+
+    function getLikedSet() {
+      try { return new Set(JSON.parse(localStorage.getItem(LIKES_KEY)) || []); }
+      catch { return new Set(); }
+    }
+
+    function saveLikedSet(set) {
+      localStorage.setItem(LIKES_KEY, JSON.stringify([...set]));
+    }
+
+    function hasLiked(postId) {
+      return getLikedSet().has(String(postId));
+    }
+
+    function markLiked(postId) {
+      const set = getLikedSet();
+      set.add(String(postId));
+      saveLikedSet(set);
+    }
 
     // ════════════════════════════════════════
     //  初期化
@@ -392,7 +476,6 @@
     async function init() {
       const urlParams = new URLSearchParams(window.location.search);
       const postId = urlParams.get('id');
-
       if (postId) {
         await loadSinglePost(postId);
       } else {
@@ -440,7 +523,7 @@
             <span class="post-date">${escHtml(post.date)}</span>
           </div>
           <div class="post-title">${escHtml(post.title)}</div>
-          <div class="post-excerpt">${escHtml(post.excerpt || '')}…</div>
+          <div class="post-excerpt">${escHtml(post.excerpt || '')}</div>
           <span class="post-readmore">続きを読む →</span>
         </a>
       `).join('');
@@ -450,10 +533,12 @@
     //  記事1件取得・表示
     // ════════════════════════════════════════
     async function loadSinglePost(id) {
+      currentPostId = id;
       document.getElementById('post-list').style.display = 'none';
       document.getElementById('filter-area').style.display = 'none';
       document.getElementById('blog-header').style.display = 'none';
       document.getElementById('post-detail').style.display = 'block';
+      document.getElementById('like-area').style.display = 'none';
 
       document.getElementById('detail-content').innerHTML =
         '<div class="loading-area"><div class="loading-spinner"></div><p>読み込み中...</p></div>';
@@ -472,14 +557,71 @@
           <span style="color:var(--text-muted); font-size:0.85rem;">${escHtml(post.date)}</span>
         `;
         document.getElementById('detail-title').textContent = post.title;
-        // contentはQuill生成のHTMLをそのまま表示
         document.getElementById('detail-content').innerHTML = post.content;
+
+        // いいねエリア表示
+        setupLikeArea(id, post.likes);
 
       } catch (err) {
         document.getElementById('detail-content').innerHTML =
           '<div class="empty-area"><p>記事が見つかりませんでした。</p></div>';
         console.error(err);
       }
+    }
+
+    // ════════════════════════════════════════
+    //  いいね機能
+    // ════════════════════════════════════════
+    function setupLikeArea(postId, initialLikes) {
+      const likeArea = document.getElementById('like-area');
+      const likeBtn = document.getElementById('like-btn');
+      const likeIcon = document.getElementById('like-icon');
+      const likeCount = document.getElementById('like-count');
+
+      const liked = hasLiked(postId);
+      const count = Number(initialLikes) || 0;
+
+      updateLikeUI(liked, count);
+      likeArea.style.display = 'flex';
+
+      likeBtn.onclick = async () => {
+        if (hasLiked(postId)) return;
+
+        likeBtn.disabled = true;
+        try {
+          const res = await fetch(GAS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({ action: 'likePost', id: postId })
+          });
+          const result = await res.json();
+          if (result.success) {
+            markLiked(postId);
+            updateLikeUI(true, result.likes);
+          }
+        } catch (e) {
+          console.error(e);
+        } finally {
+          likeBtn.disabled = false;
+        }
+      };
+    }
+
+    function updateLikeUI(liked, count) {
+      const likeBtn = document.getElementById('like-btn');
+      const likeIcon = document.getElementById('like-icon');
+      const likeCount = document.getElementById('like-count');
+
+      if (liked) {
+        likeBtn.classList.add('liked');
+        likeIcon.textContent = '♥';
+        likeBtn.disabled = true;
+      } else {
+        likeBtn.classList.remove('liked');
+        likeIcon.textContent = '♡';
+        likeBtn.disabled = false;
+      }
+      likeCount.textContent = count > 0 ? `${count} いいね` : '';
     }
 
     // ════════════════════════════════════════
@@ -519,7 +661,8 @@
         '広報課': 'background:#F5EFFF; color:#6B38A3;',
         'はなたれパンダ': 'background:#ffe0eb; color:#E75480;',
         'たまねぎ': 'background:#e0f5e9; color:#2E8B57;',
-        'こぐま': 'background:#f5ede0; color:#D2691E;'
+        'こぐま': 'background:#f5ede0; color:#D2691E;',
+        '国主': 'background:#FFF3CD; color:#B8860B;'
       };
       return styles[group] || 'background:#F5EFFF; color:#6B38A3;';
     }
