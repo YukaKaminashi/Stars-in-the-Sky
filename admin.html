@@ -426,33 +426,47 @@
 
     <!-- ニュース管理パネル -->
     <div id="panel-news" class="admin-body" style="display:none;">
-      <div class="form-group">
-        <label class="form-label">新しいお知らせを追加</label>
-        <div class="news-form-row">
-          <input type="date" class="form-input" id="news-date" />
-          <select class="form-select" id="news-badge">
-            <option value="運営">運営</option>
-            <option value="Discord">Discord</option>
-            <option value="イベント">イベント</option>
-            <option value="お知らせ">お知らせ</option>
-            <option value="更新">更新</option>
-          </select>
+
+      <!-- ニュース管理用パスワード再認証 -->
+      <div id="news-auth-wall" style="text-align:center; padding:80px 20px;">
+        <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:20px;">お知らせ管理には別のパスワードが必要です</p>
+        <div style="max-width:320px; margin:0 auto;">
+          <input type="password" class="form-input" id="news-pw-input" placeholder="管理パスワード" style="margin-bottom:12px;" />
+          <button class="btn-submit" id="news-pw-btn" style="width:100%; padding:12px;">認証する</button>
+          <div id="news-pw-error" style="color:#e53e3e; font-size:0.85rem; margin-top:10px; display:none;">パスワードが違います</div>
         </div>
-        <div class="news-form-row" style="grid-template-columns: 1fr;">
-          <textarea class="form-input" id="news-text" rows="4" placeholder="お知らせの本文を入力（改行可）" style="resize: vertical; line-height: 1.7;"></textarea>
-        </div>
-        <div class="news-form-row" style="grid-template-columns: 1fr;">
-          <input type="url" class="form-input" id="news-link" placeholder="リンクURL（任意）" />
-        </div>
-      </div>
-      <div class="submit-area">
-        <button class="btn-submit" id="btn-news-submit">追加する ✦</button>
       </div>
 
-      <div class="news-existing">
-        <div class="news-existing-title">現在のお知らせ一覧</div>
-        <div id="news-list-admin">読み込み中...</div>
-      </div>
+      <!-- 認証後コンテンツ -->
+      <div id="news-panel-content" style="display:none;">
+        <div class="form-group">
+          <label class="form-label">新しいお知らせを追加</label>
+          <div class="news-form-row">
+            <input type="date" class="form-input" id="news-date" />
+            <select class="form-select" id="news-badge">
+              <option value="運営">運営</option>
+              <option value="Discord">Discord</option>
+              <option value="イベント">イベント</option>
+              <option value="お知らせ">お知らせ</option>
+              <option value="更新">更新</option>
+            </select>
+          </div>
+          <div class="news-form-row" style="grid-template-columns: 1fr;">
+            <textarea class="form-input" id="news-text" rows="4" placeholder="お知らせの本文を入力（改行可）" style="resize: vertical; line-height: 1.7;"></textarea>
+          </div>
+          <div class="news-form-row" style="grid-template-columns: 1fr;">
+            <input type="url" class="form-input" id="news-link" placeholder="リンクURL（任意）" />
+          </div>
+        </div>
+        <div class="submit-area">
+          <button class="btn-submit" id="btn-news-submit">追加する ✦</button>
+        </div>
+
+        <div class="news-existing">
+          <div class="news-existing-title">現在のお知らせ一覧</div>
+          <div id="news-list-admin">読み込み中...</div>
+        </div>
+      </div><!-- /news-panel-content -->
     </div>
   </div>
 
@@ -534,8 +548,22 @@
 
   <!-- コメント管理パネル -->
   <div id="panel-comments" class="admin-body" style="display:none;">
-    <div class="news-existing-title">コメント一覧（新しい順）</div>
-    <div id="comment-list-admin">読み込み中...</div>
+
+    <!-- コメント管理用パスワード再認証 -->
+    <div id="comments-auth-wall" style="text-align:center; padding:80px 20px;">
+      <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:20px;">コメント管理には別のパスワードが必要です</p>
+      <div style="max-width:320px; margin:0 auto;">
+        <input type="password" class="form-input" id="comments-pw-input" placeholder="管理パスワード" style="margin-bottom:12px;" />
+        <button class="btn-submit" id="comments-pw-btn" style="width:100%; padding:12px;">認証する</button>
+        <div id="comments-pw-error" style="color:#e53e3e; font-size:0.85rem; margin-top:10px; display:none;">パスワードが違います</div>
+      </div>
+    </div>
+
+    <!-- 認証後コンテンツ -->
+    <div id="comments-panel-content" style="display:none;">
+      <div class="news-existing-title">コメント一覧（新しい順）</div>
+      <div id="comment-list-admin">読み込み中...</div>
+    </div><!-- /comments-panel-content -->
   </div>
 
   <div class="toast" id="toast"></div>
@@ -655,9 +683,9 @@
         document.getElementById('panel-' + t).style.display = tab === t ? 'block' : 'none';
         document.getElementById('tab-' + t).classList.toggle('active', tab === t);
       });
-      if (tab === 'news') loadNewsList();
+      if (tab === 'news') initNewsTab();
       if (tab === 'members') initMembersTab();
-      if (tab === 'comments') loadAllComments();
+      if (tab === 'comments') initCommentsTab();
     }
 
     // ════════════════════════════════════════
@@ -703,6 +731,64 @@
         if (result.success) { showToast('削除しました', 'success'); loadAllComments(); }
         else throw new Error();
       } catch { showToast('削除に失敗しました', 'error'); }
+    }
+
+    // ════════════════════════════════════════
+    //  ニュース管理タブ
+    // ════════════════════════════════════════
+    function initNewsTab() {
+      if (sessionStorage.getItem(MEMBERS_ADMIN_SESSION_KEY) === 'ok') {
+        showNewsPanel();
+      }
+    }
+
+    document.getElementById('news-pw-btn').addEventListener('click', () => {
+      const pw = document.getElementById('news-pw-input').value;
+      if (pw === MEMBERS_ADMIN_PASSWORD) {
+        sessionStorage.setItem(MEMBERS_ADMIN_SESSION_KEY, 'ok');
+        document.getElementById('news-pw-error').style.display = 'none';
+        showNewsPanel();
+      } else {
+        document.getElementById('news-pw-error').style.display = 'block';
+      }
+    });
+    document.getElementById('news-pw-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('news-pw-btn').click();
+    });
+
+    function showNewsPanel() {
+      document.getElementById('news-auth-wall').style.display = 'none';
+      document.getElementById('news-panel-content').style.display = 'block';
+      loadNewsList();
+    }
+
+    // ════════════════════════════════════════
+    //  コメント管理タブ
+    // ════════════════════════════════════════
+    function initCommentsTab() {
+      if (sessionStorage.getItem(MEMBERS_ADMIN_SESSION_KEY) === 'ok') {
+        showCommentsPanel();
+      }
+    }
+
+    document.getElementById('comments-pw-btn').addEventListener('click', () => {
+      const pw = document.getElementById('comments-pw-input').value;
+      if (pw === MEMBERS_ADMIN_PASSWORD) {
+        sessionStorage.setItem(MEMBERS_ADMIN_SESSION_KEY, 'ok');
+        document.getElementById('comments-pw-error').style.display = 'none';
+        showCommentsPanel();
+      } else {
+        document.getElementById('comments-pw-error').style.display = 'block';
+      }
+    });
+    document.getElementById('comments-pw-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('comments-pw-btn').click();
+    });
+
+    function showCommentsPanel() {
+      document.getElementById('comments-auth-wall').style.display = 'none';
+      document.getElementById('comments-panel-content').style.display = 'block';
+      loadAllComments();
     }
 
     // ════════════════════════════════════════
