@@ -566,37 +566,25 @@
       transform: translateY(-6px);
       box-shadow: 0 16px 40px rgba(107, 56, 163, 0.15);
     }
-    .blog-preview-thumb {
-      width: 100%;
-      aspect-ratio: 16 / 9;
-      object-fit: cover;
-      background: var(--purple-soft);
-    }
-    .blog-preview-thumb-placeholder {
-      width: 100%;
-      aspect-ratio: 16 / 9;
-      background: linear-gradient(135deg, var(--purple-soft), #e8d5ff);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 2rem;
-      color: var(--main-purple);
-      opacity: 0.4;
-    }
-    .blog-preview-body { padding: 18px 20px; flex: 1; display: flex; flex-direction: column; gap: 8px; }
+    .blog-preview-body { padding: 22px 24px; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+    .blog-preview-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
     .blog-preview-author {
-      font-size: 0.8rem;
+      font-size: 0.82rem;
       color: var(--main-purple);
       font-weight: 700;
     }
+    .blog-preview-date {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
     .blog-preview-title {
-      font-size: 0.95rem;
+      font-size: 1rem;
       font-weight: 700;
       color: var(--text-dark);
       line-height: 1.5;
     }
     .blog-preview-excerpt {
-      font-size: 0.82rem;
+      font-size: 0.83rem;
       color: var(--text-muted);
       line-height: 1.6;
       flex: 1;
@@ -989,27 +977,18 @@
           grid.innerHTML = '<p class="blog-preview-loading">まだ記事がありません。</p>';
           return;
         }
-        const ICON_BASE = 'https://raw.githubusercontent.com/YukaKaminashi/Stars-in-the-Sky/main/';
-        const GROUP_ICON = {
-          '\u306f\u306a\u305f\u308c\u30d1\u30f3\u30c0': ICON_BASE + 'hanatare.icon.png',
-          '\u305f\u307e\u306d\u304e':                   ICON_BASE + 'tamanegi.icon.png',
-          '\u3053\u3050\u307e':                         ICON_BASE + 'koguma.icon.png',
-        };
         const latest = posts.slice(0, 3);
-        grid.innerHTML = latest.map(post => {
-          const iconSrc = GROUP_ICON[post.group] || (ICON_BASE + 'logo.hoshinosora.webp');
-          return `
-            <a class="blog-preview-card" href="blog.html?id=${escHtml(post.id)}">
-              <div class="blog-preview-thumb-placeholder" style="padding:20px;">
-                <img src="${iconSrc}" alt="" style="width:80px;height:80px;object-fit:contain;opacity:0.85;" loading="lazy">
+        grid.innerHTML = latest.map(post => `
+          <a class="blog-preview-card" href="blog.html?id=${escHtml(post.id)}">
+            <div class="blog-preview-body">
+              <div class="blog-preview-meta">
+                <span class="blog-preview-author">${escHtml(post.author)}</span>
+                <span class="blog-preview-date">${escHtml(post.date)}</span>
               </div>
-              <div class="blog-preview-body">
-                <div class="blog-preview-author">\u2736 ${escHtml(post.author)}</div>
-                <div class="blog-preview-title">${escHtml(post.title)}</div>
-                <div class="blog-preview-excerpt">${escHtml(post.excerpt || '')}\u2026</div>
-              </div>
-            </a>`;
-        }).join('');
+              <div class="blog-preview-title">${escHtml(post.title)}</div>
+              <div class="blog-preview-excerpt">${escHtml(post.excerpt || '')}…</div>
+            </div>
+          </a>`).join('');
         // カードを表示（フェードイン不要、そのまま表示）
         grid.querySelectorAll('.blog-preview-card').forEach(el => {
           el.style.opacity = '1';
