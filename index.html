@@ -989,18 +989,24 @@
           grid.innerHTML = '<p class="blog-preview-loading">まだ記事がありません。</p>';
           return;
         }
+        const ICON_BASE = 'https://raw.githubusercontent.com/YukaKaminashi/Stars-in-the-Sky/main/';
+        const GROUP_ICON = {
+          '\u306f\u306a\u305f\u308c\u30d1\u30f3\u30c0': ICON_BASE + 'hanatare.icon.png',
+          '\u305f\u307e\u306d\u304e':                   ICON_BASE + 'tamanegi.icon.png',
+          '\u3053\u3050\u307e':                         ICON_BASE + 'koguma.icon.png',
+        };
         const latest = posts.slice(0, 3);
         grid.innerHTML = latest.map(post => {
-          const thumb = post.thumbnail
-            ? `<img class="blog-preview-thumb" src="${escHtml(post.thumbnail)}" alt="" loading="lazy">`
-            : `<div class="blog-preview-thumb-placeholder">✦</div>`;
+          const iconSrc = GROUP_ICON[post.group] || (ICON_BASE + 'logo.hoshinosora.webp');
           return `
             <a class="blog-preview-card" href="blog.html?id=${escHtml(post.id)}">
-              ${thumb}
+              <div class="blog-preview-thumb-placeholder" style="padding:20px;">
+                <img src="${iconSrc}" alt="" style="width:80px;height:80px;object-fit:contain;opacity:0.85;" loading="lazy">
+              </div>
               <div class="blog-preview-body">
-                <div class="blog-preview-author">✦ ${escHtml(post.author)}</div>
+                <div class="blog-preview-author">\u2736 ${escHtml(post.author)}</div>
                 <div class="blog-preview-title">${escHtml(post.title)}</div>
-                <div class="blog-preview-excerpt">${escHtml(post.excerpt || '')}…</div>
+                <div class="blog-preview-excerpt">${escHtml(post.excerpt || '')}\u2026</div>
               </div>
             </a>`;
         }).join('');

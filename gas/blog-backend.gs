@@ -80,7 +80,8 @@ function getPosts() {
     if (post.published) {
       const { content, ...meta } = post;
       meta.excerpt = stripHtml(content).substring(0, 120);
-      meta.thumbnail = extractFirstImage(content);
+      const thumb = extractFirstImage(content);
+      meta.thumbnail = thumb.startsWith('data:') ? '' : thumb;
       posts.push(meta);
     }
   }
