@@ -214,28 +214,81 @@
     }
     .ql-editor p { margin-bottom: 0.6em; }
 
-    /* 画像アップロード中のオーバーレイ */
-    #upload-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(255,253,245,0.85);
-      z-index: 9998;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      gap: 16px;
-    }
-    #upload-overlay.active { display: flex; }
-    .upload-spinner {
-      width: 48px;
-      height: 48px;
-      border: 4px solid var(--purple-soft);
-      border-top-color: var(--main-purple);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── タブ ── */
+    .admin-tabs {
+      display: flex;
+      gap: 8px;
+      margin: 0 0 0 24px;
+    }
+    .tab-btn {
+      padding: 6px 18px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      background: none;
+      font-family: var(--font-gothic);
+      font-size: 0.85rem;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      background: var(--main-purple);
+      color: white;
+      border-color: var(--main-purple);
+    }
+
+    /* ── ニュースフォーム ── */
+    .news-form-row {
+      display: grid;
+      grid-template-columns: 130px 1fr;
+      gap: 12px;
+      align-items: start;
+      margin-bottom: 16px;
+    }
+    .news-existing {
+      margin-top: 40px;
+    }
+    .news-existing-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+      margin-bottom: 16px;
+    }
+    .news-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      background: var(--white);
+      border: 1px solid #e8e0f0;
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+    .news-row-date { font-size: 0.8rem; color: var(--text-muted); flex-shrink: 0; }
+    .news-row-badge {
+      font-size: 0.72rem;
+      background: var(--main-purple);
+      color: white;
+      padding: 2px 8px;
+      border-radius: 100px;
+      flex-shrink: 0;
+    }
+    .news-row-text { flex: 1; font-size: 0.9rem; }
+    .btn-delete {
+      flex-shrink: 0;
+      background: none;
+      border: 1px solid #ddd;
+      color: #aaa;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-delete:hover { border-color: #e53e3e; color: #e53e3e; }
 
     /* 送信ボタン */
     .submit-area {
@@ -318,18 +371,15 @@
     </div>
   </div>
 
-  <!-- アップロード中オーバーレイ -->
-  <div id="upload-overlay">
-    <div class="upload-spinner"></div>
-    <p style="color: var(--main-purple); font-weight: 700;">画像をアップロード中...</p>
-  </div>
-
   <!-- 管理画面 -->
   <div id="admin-panel">
     <header class="admin-header">
       <div style="display:flex; align-items:center;">
         <span class="header-logo">星ノ空</span>
-        <span class="header-subtitle">ブログ投稿</span>
+        <div class="admin-tabs">
+          <button class="tab-btn active" id="tab-blog" onclick="switchTab('blog')">ブログ投稿</button>
+          <button class="tab-btn" id="tab-news" onclick="switchTab('news')">ニュース管理</button>
+        </div>
       </div>
       <div style="display:flex; align-items:center; gap:12px;">
         <a href="index.html" style="font-size:0.85rem; color:var(--text-muted); text-decoration:none; border:1px solid #ddd; border-radius:8px; padding:6px 16px; transition:all 0.2s;" onmouseover="this.style.borderColor='var(--main-purple)';this.style.color='var(--main-purple)'" onmouseout="this.style.borderColor='#ddd';this.style.color='var(--text-muted)'">← ホームへ</a>
@@ -337,12 +387,12 @@
       </div>
     </header>
 
-    <div class="admin-body">
+    <!-- ブログ投稿パネル -->
+    <div id="panel-blog" class="admin-body">
       <div class="form-group">
         <label class="form-label">タイトル</label>
         <input type="text" class="form-input title-input" id="post-title" placeholder="記事のタイトルを入力" />
       </div>
-
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">著者名</label>
@@ -358,17 +408,46 @@
           </select>
         </div>
       </div>
-
       <div class="form-group">
         <label class="form-label">本文</label>
         <div class="editor-wrapper">
           <div id="editor"></div>
         </div>
       </div>
-
       <div class="submit-area">
         <span id="submit-msg"></span>
         <button class="btn-submit" id="btn-submit">投稿する ✦</button>
+      </div>
+    </div>
+
+    <!-- ニュース管理パネル -->
+    <div id="panel-news" class="admin-body" style="display:none;">
+      <div class="form-group">
+        <label class="form-label">新しいお知らせを追加</label>
+        <div class="news-form-row">
+          <input type="date" class="form-input" id="news-date" />
+          <select class="form-select" id="news-badge">
+            <option value="運営">運営</option>
+            <option value="Discord">Discord</option>
+            <option value="イベント">イベント</option>
+            <option value="お知らせ">お知らせ</option>
+            <option value="更新">更新</option>
+          </select>
+        </div>
+        <div class="news-form-row" style="grid-template-columns: 1fr;">
+          <input type="text" class="form-input" id="news-text" placeholder="お知らせの本文を入力" />
+        </div>
+        <div class="news-form-row" style="grid-template-columns: 1fr;">
+          <input type="url" class="form-input" id="news-link" placeholder="リンクURL（任意）" />
+        </div>
+      </div>
+      <div class="submit-area">
+        <button class="btn-submit" id="btn-news-submit">追加する ✦</button>
+      </div>
+
+      <div class="news-existing">
+        <div class="news-existing-title">現在のお知らせ一覧</div>
+        <div id="news-list-admin">読み込み中...</div>
       </div>
     </div>
   </div>
@@ -447,7 +526,7 @@
     });
 
     // ════════════════════════════════════════
-    //  画像アップロード
+    //  画像挿入（canvas圧縮・base64直接埋め込み）
     // ════════════════════════════════════════
     function imageHandler() {
       const input = document.createElement('input');
@@ -455,55 +534,112 @@
       input.accept = 'image/*';
       input.click();
 
-      input.onchange = async () => {
+      input.onchange = () => {
         const file = input.files[0];
         if (!file) return;
 
-        // ファイルサイズチェック（5MB以下）
-        if (file.size > 5 * 1024 * 1024) {
-          showToast('画像は5MB以下にしてください', 'error');
-          return;
-        }
-
-        showUploadOverlay(true);
-
-        try {
-          const base64 = await fileToBase64(file);
-          const res = await fetch(GAS_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({ action: 'uploadImage', imageData: base64 })
-          });
-          const result = await res.json();
-
-          if (result.success) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            const MAX_W = 800;
+            let w = img.width, h = img.height;
+            if (w > MAX_W) { h = Math.round(h * MAX_W / w); w = MAX_W; }
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.72);
             const range = quill.getSelection() || { index: quill.getLength() };
-            quill.insertEmbed(range.index, 'image', result.url);
+            quill.insertEmbed(range.index, 'image', dataUrl);
             quill.setSelection(range.index + 1);
-          } else {
-            throw new Error(result.error || 'Upload failed');
-          }
-        } catch (err) {
-          showToast('画像のアップロードに失敗しました', 'error');
-          console.error(err);
-        } finally {
-          showUploadOverlay(false);
-        }
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
       };
     }
 
-    function fileToBase64(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
+    // ════════════════════════════════════════
+    //  タブ切替
+    // ════════════════════════════════════════
+    function switchTab(tab) {
+      document.getElementById('panel-blog').style.display = tab === 'blog' ? 'block' : 'none';
+      document.getElementById('panel-news').style.display = tab === 'news' ? 'block' : 'none';
+      document.getElementById('tab-blog').classList.toggle('active', tab === 'blog');
+      document.getElementById('tab-news').classList.toggle('active', tab === 'news');
+      if (tab === 'news') loadNewsList();
     }
 
-    function showUploadOverlay(show) {
-      const el = document.getElementById('upload-overlay');
-      el.classList.toggle('active', show);
+    // ════════════════════════════════════════
+    //  ニュース管理
+    // ════════════════════════════════════════
+    // 日付の初期値を今日に
+    document.getElementById('news-date').value = new Date().toISOString().slice(0, 10);
+
+    async function loadNewsList() {
+      const container = document.getElementById('news-list-admin');
+      container.innerHTML = '読み込み中...';
+      try {
+        const res = await fetch(GAS_URL + '?action=getNews');
+        const items = await res.json();
+        if (!Array.isArray(items) || items.length === 0) {
+          container.innerHTML = '<p style="color:var(--text-muted);font-size:0.9rem;">まだお知らせがありません。</p>';
+          return;
+        }
+        container.innerHTML = items.map(item => `
+          <div class="news-row">
+            <span class="news-row-date">${escHtml(String(item.date))}</span>
+            <span class="news-row-badge">${escHtml(item.badge)}</span>
+            <span class="news-row-text">${escHtml(item.text)}${item.link ? ' <a href="'+escHtml(item.link)+'" target="_blank" style="color:var(--main-purple)">🔗</a>' : ''}</span>
+            <button class="btn-delete" onclick="deleteNewsItem('${escHtml(String(item.id))}')">削除</button>
+          </div>`).join('');
+      } catch (err) {
+        container.innerHTML = '<p style="color:#e53e3e;font-size:0.9rem;">読み込みに失敗しました。</p>';
+      }
+    }
+
+    document.getElementById('btn-news-submit').addEventListener('click', async () => {
+      const date = document.getElementById('news-date').value;
+      const badge = document.getElementById('news-badge').value;
+      const text = document.getElementById('news-text').value.trim();
+      const link = document.getElementById('news-link').value.trim();
+      if (!date || !text) { showToast('日付と本文を入力してください', 'error'); return; }
+
+      const btn = document.getElementById('btn-news-submit');
+      btn.disabled = true;
+      try {
+        const res = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ action: 'saveNews', date: date.replace(/-/g, '.'), badge, text, link })
+        });
+        const result = await res.json();
+        if (result.success) {
+          showToast('お知らせを追加しました', 'success');
+          document.getElementById('news-text').value = '';
+          document.getElementById('news-link').value = '';
+          loadNewsList();
+        } else throw new Error();
+      } catch { showToast('追加に失敗しました', 'error'); }
+      btn.disabled = false;
+    });
+
+    async function deleteNewsItem(id) {
+      if (!confirm('このお知らせを削除しますか？')) return;
+      try {
+        const res = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ action: 'deleteNews', id })
+        });
+        const result = await res.json();
+        if (result.success) { showToast('削除しました', 'success'); loadNewsList(); }
+        else throw new Error();
+      } catch { showToast('削除に失敗しました', 'error'); }
+    }
+
+    function escHtml(str) {
+      return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
     // ════════════════════════════════════════

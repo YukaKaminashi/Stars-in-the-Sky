@@ -5,19 +5,17 @@
  * 1. Google スプレッドシートを新規作成
  * 2. そのスプレッドシートの URL から ID を取得し SPREADSHEET_ID に貼り付け
  *    例: https://docs.google.com/spreadsheets/d/【ここがID】/edit
- * 3. Google Drive で画像保存用フォルダを作成
- *    フォルダを開いたときの URL の末尾の ID を DRIVE_FOLDER_ID に貼り付け
- * 4. このスクリプトをデプロイ：
+ * 3. このスクリプトをデプロイ：
  *    「デプロイ」→「新しいデプロイ」→「ウェブアプリ」
  *    ・次のユーザーとして実行: 自分
  *    ・アクセスできるユーザー: 全員（匿名ユーザーを含む）
- * 5. 表示されたウェブアプリの URL を admin.html と blog.html の GAS_URL に貼り付け
- * 6. 初回のみ initializeSheet() を手動実行してシートを初期化
+ * 4. 表示されたウェブアプリの URL を admin.html / blog.html / index.html の GAS_URL に貼り付け
+ * 5. 初回のみ initializeSheet() と initializeNewsSheet() を手動実行してシートを初期化
  */
 
 const SPREADSHEET_ID = '1D1eRCdgn8rIAR5lOXGUrMruJ3heytfqfMKayqcH6LUE';
 const SHEET_NAME = 'posts';
-const DRIVE_FOLDER_ID = '1R3KAJcxvTPJWhEa1agin5tuWRTblsinJ';
+const NEWS_SHEET_NAME = 'news';
 
 // ── GET リクエスト ──────────────────────────────
 function doGet(e) {
@@ -28,6 +26,8 @@ function doGet(e) {
     result = getPosts();
   } else if (action === 'getPost') {
     result = getPost(e.parameter.id);
+  } else if (action === 'getNews') {
+    result = getNews();
   } else {
     result = { error: 'Invalid action' };
   }
@@ -38,7 +38,6 @@ function doGet(e) {
 }
 
 // ── POST リクエスト ─────────────────────────────
-// Content-Type: text/plain で送信することでCORSプリフライトを回避
 function doPost(e) {
   let data;
   try {
@@ -52,8 +51,10 @@ function doPost(e) {
   let result;
   if (data.action === 'savePost') {
     result = savePost(data);
-  } else if (data.action === 'uploadImage') {
-    result = uploadImage(data);
+  } else if (data.action === 'saveNews') {
+    result = saveNews(data);
+  } else if (data.action === 'deleteNews') {
+    result = deleteNews(data);
   } else {
     result = { error: 'Invalid action' };
   }
@@ -77,7 +78,6 @@ function getPosts() {
     const post = {};
     headers.forEach((header, j) => { post[header] = row[j]; });
     if (post.published) {
-      // contentは一覧では返さない（軽量化）
       const { content, ...meta } = post;
       meta.excerpt = stripHtml(content).substring(0, 120);
       meta.thumbnail = extractFirstImage(content);
@@ -111,38 +111,50 @@ function savePost(data) {
   const id = new Date().getTime();
   const date = Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy-MM-dd HH:mm');
 
-  sheet.appendRow([
-    id,
-    data.title,
-    data.author,
-    data.group,
-    data.content,
-    date,
-    true
-  ]);
-
+  sheet.appendRow([id, data.title, data.author, data.group, data.content, date, true]);
   return { success: true, id: id };
 }
 
-// ── 画像アップロード（Google Drive 保存）─────────
-function uploadImage(data) {
-  const base64Data = data.imageData.replace(/^data:image\/\w+;base64,/, '');
-  const mimeMatch = data.imageData.match(/^data:(image\/\w+);base64,/);
-  if (!mimeMatch) return { error: 'Invalid image data' };
+// ── ニュース一覧取得 ─────────────────────────────
+function getNews() {
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(NEWS_SHEET_NAME);
+  if (!sheet) return [];
+  const data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return [];
 
-  const mimeType = mimeMatch[1];
-  const ext = mimeType.split('/')[1];
-  const fileName = 'blog_img_' + new Date().getTime() + '.' + ext;
+  const headers = data[0];
+  const items = [];
 
-  const folder = DriveApp.getFolderById(DRIVE_FOLDER_ID);
-  const blob = Utilities.newBlob(Utilities.base64Decode(base64Data), mimeType, fileName);
-  const file = folder.createFile(blob);
-  file.setSharing(DriveApp.Access.ANYONE, DriveApp.Permission.VIEW);
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    const item = {};
+    headers.forEach((h, j) => { item[h] = row[j]; });
+    if (item.published) items.push(item);
+  }
 
-  const fileId = file.getId();
-  const url = 'https://drive.google.com/uc?export=view&id=' + fileId;
+  items.sort((a, b) => new Date(b.date) - new Date(a.date));
+  return items;
+}
 
-  return { success: true, url: url };
+// ── ニュース保存 ─────────────────────────────────
+function saveNews(data) {
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(NEWS_SHEET_NAME);
+  const id = new Date().getTime();
+  sheet.appendRow([id, data.date, data.badge, data.text, data.link || '', true]);
+  return { success: true, id: id };
+}
+
+// ── ニュース削除 ─────────────────────────────────
+function deleteNews(data) {
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(NEWS_SHEET_NAME);
+  const rows = sheet.getDataRange().getValues();
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][0]) === String(data.id)) {
+      sheet.deleteRow(i + 1);
+      return { success: true };
+    }
+  }
+  return { error: 'Not found' };
 }
 
 // ── 最初の画像URL抽出（サムネイル用）────────────
@@ -158,33 +170,26 @@ function stripHtml(html) {
   return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
 }
 
-// ── 既存画像の共有設定を一括修正（一度だけ手動実行）──
-function fixExistingImageSharing() {
-  const folder = DriveApp.getFolderById(DRIVE_FOLDER_ID);
-  const files = folder.getFiles();
-  let count = 0;
-  while (files.hasNext()) {
-    const file = files.next();
-    file.setSharing(DriveApp.Access.ANYONE, DriveApp.Permission.VIEW);
-    count++;
-  }
-  Logger.log(count + ' 件のファイルの共有設定を更新しました');
-}
-
 // ── シート初期化（初回のみ手動実行）─────────────
 function initializeSheet() {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   let sheet = ss.getSheetByName(SHEET_NAME);
-
-  if (!sheet) {
-    sheet = ss.insertSheet(SHEET_NAME);
-  }
-
-  // ヘッダーが未設定なら追加
+  if (!sheet) sheet = ss.insertSheet(SHEET_NAME);
   if (sheet.getLastRow() === 0) {
     sheet.appendRow(['id', 'title', 'author', 'group', 'content', 'date', 'published']);
     sheet.getRange(1, 1, 1, 7).setFontWeight('bold');
   }
+  Logger.log('postsシートの初期化完了');
+}
 
-  Logger.log('シートの初期化が完了しました');
+// ── ニュースシート初期化（初回のみ手動実行）───────
+function initializeNewsSheet() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let sheet = ss.getSheetByName(NEWS_SHEET_NAME);
+  if (!sheet) sheet = ss.insertSheet(NEWS_SHEET_NAME);
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(['id', 'date', 'badge', 'text', 'link', 'published']);
+    sheet.getRange(1, 1, 1, 6).setFontWeight('bold');
+  }
+  Logger.log('newsシートの初期化完了');
 }
