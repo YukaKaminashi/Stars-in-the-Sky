@@ -266,6 +266,14 @@
       border-color: var(--main-purple);
       color: var(--white);
     }
+    .cat-btn--secret {
+      border-style: dashed;
+      font-style: italic;
+      opacity: 0.7;
+    }
+    .cat-btn--secret:hover, .cat-btn--secret.active {
+      opacity: 1;
+    }
 
     /* 資料カード */
     .doc-list { display: flex; flex-direction: column; gap: 12px; }
@@ -419,6 +427,7 @@
           <button class="cat-btn" data-cat="スライド資料">スライド資料</button>
           <button class="cat-btn" data-cat="組織図">組織図</button>
           <button class="cat-btn" data-cat="議事録">議事録</button>
+          <button class="cat-btn cat-btn--secret" data-cat="椿の備忘録">椿の備忘録</button>
         </div>
         <div class="doc-list" id="doc-list">
           <div class="loading-area"><div class="loading-spinner"></div></div>
@@ -525,10 +534,12 @@
       }
     }
 
+    const SECRET_CAT = '椿の備忘録';
+
     function renderDocs() {
       const container = document.getElementById('doc-list');
       const filtered = currentCat === 'all'
-        ? allDocs
+        ? allDocs.filter(d => d.category !== SECRET_CAT)
         : allDocs.filter(d => d.category === currentCat);
 
       if (!Array.isArray(filtered) || filtered.length === 0) {
