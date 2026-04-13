@@ -18,6 +18,7 @@ const SHEET_NAME = 'posts';
 const NEWS_SHEET_NAME = 'news';
 const MEMBERS_SHEET_NAME = 'members';
 const SCHEDULE_SHEET_NAME = 'schedule';
+const COMMENTS_SHEET_NAME = 'comments';
 
 // ── GET リクエスト ──────────────────────────────
 function doGet(e) {
@@ -36,6 +37,10 @@ function doGet(e) {
     result = getMembers(e.parameter.category);
   } else if (action === 'getSchedule') {
     result = getSchedule();
+  } else if (action === 'getComments') {
+    result = getComments(e.parameter.postId);
+  } else if (action === 'getAllComments') {
+    result = getAllComments();
   } else {
     result = { error: 'Invalid action' };
   }
@@ -73,6 +78,10 @@ function doPost(e) {
     result = saveSchedule(data);
   } else if (data.action === 'deleteSchedule') {
     result = deleteSchedule(data);
+  } else if (data.action === 'saveComment') {
+    result = saveComment(data);
+  } else if (data.action === 'deleteComment') {
+    result = deleteComment(data);
   } else {
     result = { error: 'Invalid action' };
   }
@@ -325,6 +334,97 @@ function deleteSchedule(data) {
     }
   }
   return { error: 'Not found' };
+}
+
+// ── コメント一覧取得（記事別・親子構造で返す）───────
+function getComments(postId) {
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(COMMENTS_SHEET_NAME);
+  if (!sheet) return [];
+  const data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return [];
+
+  const headers = data[0];
+  const all = [];
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    const item = {};
+    headers.forEach((h, j) => { item[h] = row[j]; });
+    if (item.published && String(item.postId) === String(postId)) {
+      all.push(item);
+    }
+  }
+
+  // 古い順にソート
+  all.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  // 親コメントに replies を付与
+  const parents = all.filter(c => !c.parentId);
+  const replies = all.filter(c => !!c.parentId);
+
+  return parents.map(p => ({
+    ...p,
+    replies: replies.filter(r => String(r.parentId) === String(p.id))
+  }));
+}
+
+// ── 全コメント取得（管理画面用）──────────────────────
+function getAllComments() {
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(COMMENTS_SHEET_NAME);
+  if (!sheet) return [];
+  const data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return [];
+
+  const headers = data[0];
+  const items = [];
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    const item = {};
+    headers.forEach((h, j) => { item[h] = row[j]; });
+    if (item.published) items.push(item);
+  }
+  items.sort((a, b) => new Date(b.date) - new Date(a.date));
+  return items;
+}
+
+// ── コメント保存 ──────────────────────────────────
+function saveComment(data) {
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(COMMENTS_SHEET_NAME);
+  const id = new Date().getTime();
+  const date = Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy-MM-dd HH:mm');
+  sheet.appendRow([id, data.postId, data.parentId || '', data.name, data.text, date, true]);
+  return { success: true, id: id, date: date };
+}
+
+// ── コメント削除（返信も連鎖削除）─────────────────
+function deleteComment(data) {
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(COMMENTS_SHEET_NAME);
+  const rows = sheet.getDataRange().getValues();
+  // 削除対象のidを収集（親 + その返信）
+  const targetIds = new Set([String(data.id)]);
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][2]) === String(data.id)) {
+      targetIds.add(String(rows[i][0]));
+    }
+  }
+  // 後ろから削除（行番号がずれないように）
+  for (let i = rows.length - 1; i >= 1; i--) {
+    if (targetIds.has(String(rows[i][0]))) {
+      sheet.deleteRow(i + 1);
+    }
+  }
+  return { success: true };
+}
+
+// ── コメントシート初期化（初回のみ手動実行）──────────
+function initializeCommentsSheet() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let sheet = ss.getSheetByName(COMMENTS_SHEET_NAME);
+  if (!sheet) sheet = ss.insertSheet(COMMENTS_SHEET_NAME);
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(['id', 'postId', 'parentId', 'name', 'text', 'date', 'published']);
+    sheet.getRange(1, 1, 1, 7).setFontWeight('bold');
+  }
+  Logger.log('commentsシートの初期化完了');
 }
 
 // ── メンバー資料シート初期化（初回のみ手動実行）────

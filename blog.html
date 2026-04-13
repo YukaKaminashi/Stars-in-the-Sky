@@ -340,6 +340,157 @@
       color: var(--text-muted);
     }
 
+    /* ── コメント欄 ── */
+    .comment-section {
+      margin-top: 48px;
+      padding-top: 36px;
+      border-top: 1px solid var(--purple-soft);
+    }
+    .comment-heading {
+      font-family: var(--font-mincho);
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .comment-count-badge {
+      font-family: var(--font-gothic);
+      font-size: 0.8rem;
+      font-weight: 700;
+      background: var(--purple-soft);
+      color: var(--main-purple);
+      padding: 2px 10px;
+      border-radius: 100px;
+    }
+
+    /* コメントカード */
+    .comment-card {
+      background: var(--white);
+      border-radius: 14px;
+      padding: 18px 22px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 10px rgba(107,56,163,0.05);
+    }
+    .comment-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .comment-name {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--main-purple);
+    }
+    .comment-date {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-left: auto;
+    }
+    .comment-text {
+      font-size: 0.92rem;
+      line-height: 1.75;
+      color: var(--text-dark);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .reply-toggle-btn {
+      margin-top: 10px;
+      background: none;
+      border: none;
+      font-size: 0.8rem;
+      font-family: var(--font-gothic);
+      font-weight: 700;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 0;
+      transition: color 0.2s;
+    }
+    .reply-toggle-btn:hover { color: var(--main-purple); }
+
+    /* 返信カード */
+    .replies-area {
+      margin-top: 10px;
+      padding-left: 16px;
+      border-left: 3px solid var(--purple-soft);
+    }
+    .reply-card {
+      padding: 12px 16px;
+      margin-bottom: 8px;
+      background: var(--bg-color);
+      border-radius: 10px;
+    }
+    .reply-card:last-of-type { margin-bottom: 0; }
+    .reply-card .comment-name { font-size: 0.85rem; }
+    .reply-card .comment-text { font-size: 0.88rem; }
+
+    /* インライン返信フォーム */
+    .reply-form {
+      margin-top: 10px;
+      padding: 14px 16px;
+      background: var(--bg-color);
+      border-radius: 10px;
+      display: none;
+    }
+    .reply-form.open { display: block; }
+
+    /* コメント投稿フォーム */
+    .comment-form-area {
+      margin-top: 32px;
+      background: var(--white);
+      border-radius: 16px;
+      padding: 24px 28px;
+      box-shadow: 0 2px 10px rgba(107,56,163,0.05);
+    }
+    .comment-form-title {
+      font-family: var(--font-mincho);
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin-bottom: 16px;
+    }
+    .comment-input {
+      width: 100%;
+      padding: 11px 16px;
+      border: 1.5px solid #e0d8f0;
+      border-radius: 10px;
+      font-size: 0.92rem;
+      font-family: var(--font-gothic);
+      color: var(--text-dark);
+      background: var(--white);
+      outline: none;
+      transition: border-color 0.2s;
+      margin-bottom: 10px;
+    }
+    .comment-input:focus { border-color: var(--main-purple); }
+    textarea.comment-input {
+      resize: vertical;
+      min-height: 90px;
+      line-height: 1.7;
+    }
+    .comment-submit-btn {
+      padding: 10px 28px;
+      background: var(--main-purple);
+      color: var(--white);
+      border: none;
+      border-radius: 100px;
+      font-size: 0.88rem;
+      font-family: var(--font-gothic);
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .comment-submit-btn:hover { background: #5a2d8a; }
+    .comment-submit-btn:disabled { background: #ccc; cursor: not-allowed; }
+    .comment-empty {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      padding: 20px 0;
+    }
+
     /* ── ローディング・空状態 ── */
     .loading-area, .empty-area {
       text-align: center;
@@ -422,6 +573,21 @@
         <span>いいね</span>
       </button>
       <span class="like-count" id="like-count"></span>
+    </div>
+
+    <!-- コメント欄 -->
+    <div class="comment-section" id="comment-section" style="display:none;">
+      <div class="comment-heading">
+        コメント
+        <span class="comment-count-badge" id="comment-count-badge"></span>
+      </div>
+      <div id="comment-list"></div>
+      <div class="comment-form-area">
+        <div class="comment-form-title">コメントを書く</div>
+        <input type="text" class="comment-input" id="new-comment-name" placeholder="名前" maxlength="30" />
+        <textarea class="comment-input" id="new-comment-text" placeholder="コメントを入力..." maxlength="500"></textarea>
+        <button class="comment-submit-btn" id="new-comment-submit">投稿する</button>
+      </div>
     </div>
   </div>
 
@@ -562,6 +728,9 @@
         // いいねエリア表示
         setupLikeArea(id, post.likes);
 
+        // コメント欄表示
+        loadComments(id);
+
       } catch (err) {
         document.getElementById('detail-content').innerHTML =
           '<div class="empty-area"><p>記事が見つかりませんでした。</p></div>';
@@ -622,6 +791,123 @@
         likeBtn.disabled = false;
       }
       likeCount.textContent = count > 0 ? `${count} いいね` : '';
+    }
+
+    // ════════════════════════════════════════
+    //  コメント機能
+    // ════════════════════════════════════════
+    async function loadComments(postId) {
+      const section = document.getElementById('comment-section');
+      const list = document.getElementById('comment-list');
+      section.style.display = 'block';
+      list.innerHTML = '<div style="color:var(--text-muted);font-size:0.9rem;padding:16px 0;">読み込み中...</div>';
+
+      try {
+        const res = await fetch(GAS_URL + '?action=getComments&postId=' + encodeURIComponent(postId));
+        const comments = await res.json();
+        renderComments(comments, postId);
+      } catch (e) {
+        list.innerHTML = '<p style="color:var(--text-muted);font-size:0.9rem;">コメントの読み込みに失敗しました。</p>';
+      }
+
+      // 新規コメント投稿
+      document.getElementById('new-comment-submit').onclick = async () => {
+        const name = document.getElementById('new-comment-name').value.trim();
+        const text = document.getElementById('new-comment-text').value.trim();
+        if (!name || !text) { alert('名前とコメントを入力してください。'); return; }
+
+        const btn = document.getElementById('new-comment-submit');
+        btn.disabled = true;
+        try {
+          const res = await fetch(GAS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({ action: 'saveComment', postId, parentId: '', name, text })
+          });
+          const result = await res.json();
+          if (result.success) {
+            document.getElementById('new-comment-name').value = '';
+            document.getElementById('new-comment-text').value = '';
+            // 再読み込み
+            const res2 = await fetch(GAS_URL + '?action=getComments&postId=' + encodeURIComponent(postId));
+            renderComments(await res2.json(), postId);
+          }
+        } catch (e) { alert('投稿に失敗しました。'); }
+        btn.disabled = false;
+      };
+    }
+
+    function renderComments(comments, postId) {
+      const list = document.getElementById('comment-list');
+      const badge = document.getElementById('comment-count-badge');
+
+      // 総数（コメント＋返信）
+      const total = comments.reduce((n, c) => n + 1 + (c.replies ? c.replies.length : 0), 0);
+      badge.textContent = total > 0 ? total : '';
+
+      if (!comments || comments.length === 0) {
+        list.innerHTML = '<p class="comment-empty">まだコメントはありません。最初のコメントを書いてみましょう！</p>';
+        return;
+      }
+
+      list.innerHTML = comments.map(c => {
+        const repliesHtml = (c.replies || []).map(r => `
+          <div class="reply-card">
+            <div class="comment-header">
+              <span class="comment-name">↳ ${escHtml(r.name)}</span>
+              <span class="comment-date">${escHtml(r.date)}</span>
+            </div>
+            <div class="comment-text">${escHtml(r.text)}</div>
+          </div>
+        `).join('');
+
+        return `
+          <div class="comment-card" id="comment-${c.id}">
+            <div class="comment-header">
+              <span class="comment-name">${escHtml(c.name)}</span>
+              <span class="comment-date">${escHtml(c.date)}</span>
+            </div>
+            <div class="comment-text">${escHtml(c.text)}</div>
+            <button class="reply-toggle-btn" onclick="toggleReplyForm('${c.id}')">返信する</button>
+            <div class="reply-form" id="reply-form-${c.id}">
+              <input type="text" class="comment-input" id="reply-name-${c.id}" placeholder="名前" maxlength="30" style="margin-bottom:8px;" />
+              <textarea class="comment-input" id="reply-text-${c.id}" placeholder="返信を入力..." maxlength="500" style="min-height:70px;"></textarea>
+              <div style="display:flex;gap:8px;margin-top:6px;">
+                <button class="comment-submit-btn" onclick="submitReply('${c.id}', '${postId}')">返信する</button>
+                <button class="reply-toggle-btn" style="margin-top:0;" onclick="toggleReplyForm('${c.id}')">キャンセル</button>
+              </div>
+            </div>
+            ${c.replies && c.replies.length > 0 ? `<div class="replies-area">${repliesHtml}</div>` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function toggleReplyForm(commentId) {
+      const form = document.getElementById('reply-form-' + commentId);
+      form.classList.toggle('open');
+      if (form.classList.contains('open')) {
+        form.querySelector('input').focus();
+      }
+    }
+
+    async function submitReply(parentId, postId) {
+      const name = document.getElementById('reply-name-' + parentId).value.trim();
+      const text = document.getElementById('reply-text-' + parentId).value.trim();
+      if (!name || !text) { alert('名前と返信内容を入力してください。'); return; }
+
+      try {
+        const res = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ action: 'saveComment', postId, parentId, name, text })
+        });
+        const result = await res.json();
+        if (result.success) {
+          const res2 = await fetch(GAS_URL + '?action=getComments&postId=' + encodeURIComponent(postId));
+          renderComments(await res2.json(), postId);
+        }
+      } catch (e) { alert('返信に失敗しました。'); }
     }
 
     // ════════════════════════════════════════

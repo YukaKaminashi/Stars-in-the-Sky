@@ -380,6 +380,7 @@
           <button class="tab-btn active" id="tab-blog" onclick="switchTab('blog')">ブログ投稿</button>
           <button class="tab-btn" id="tab-news" onclick="switchTab('news')">ニュース管理</button>
           <button class="tab-btn" id="tab-members" onclick="switchTab('members')">メンバー管理</button>
+          <button class="tab-btn" id="tab-comments" onclick="switchTab('comments')">コメント管理</button>
         </div>
       </div>
       <div style="display:flex; align-items:center; gap:12px;">
@@ -530,6 +531,12 @@
     </div><!-- /members-panel-content -->
   </div>
 
+  <!-- コメント管理パネル -->
+  <div id="panel-comments" class="admin-body" style="display:none;">
+    <div class="news-existing-title">コメント一覧（新しい順）</div>
+    <div id="comment-list-admin">読み込み中...</div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
   <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
@@ -643,14 +650,58 @@
     //  タブ切替
     // ════════════════════════════════════════
     function switchTab(tab) {
-      document.getElementById('panel-blog').style.display = tab === 'blog' ? 'block' : 'none';
-      document.getElementById('panel-news').style.display = tab === 'news' ? 'block' : 'none';
-      document.getElementById('panel-members').style.display = tab === 'members' ? 'block' : 'none';
-      document.getElementById('tab-blog').classList.toggle('active', tab === 'blog');
-      document.getElementById('tab-news').classList.toggle('active', tab === 'news');
-      document.getElementById('tab-members').classList.toggle('active', tab === 'members');
+      ['blog','news','members','comments'].forEach(t => {
+        document.getElementById('panel-' + t).style.display = tab === t ? 'block' : 'none';
+        document.getElementById('tab-' + t).classList.toggle('active', tab === t);
+      });
       if (tab === 'news') loadNewsList();
       if (tab === 'members') initMembersTab();
+      if (tab === 'comments') loadAllComments();
+    }
+
+    // ════════════════════════════════════════
+    //  コメント管理
+    // ════════════════════════════════════════
+    async function loadAllComments() {
+      const container = document.getElementById('comment-list-admin');
+      container.innerHTML = '読み込み中...';
+      try {
+        const res = await fetch(GAS_URL + '?action=getAllComments');
+        const items = await res.json();
+        if (!Array.isArray(items) || items.length === 0) {
+          container.innerHTML = '<p style="color:var(--text-muted);font-size:0.9rem;">コメントはまだありません。</p>';
+          return;
+        }
+        container.innerHTML = items.map(item => {
+          const isReply = item.parentId && String(item.parentId) !== '';
+          const preview = escHtml(String(item.text || '').slice(0, 60)) + (item.text && item.text.length > 60 ? '…' : '');
+          return `
+            <div class="news-row" style="${isReply ? 'margin-left:24px; border-left:3px solid #e0d8f0;' : ''}">
+              <span class="news-row-date">${escHtml(String(item.date))}</span>
+              ${isReply ? '<span class="news-row-badge" style="background:#e0d8f0;color:var(--text-muted);">返信</span>' : ''}
+              <span class="news-row-badge">${escHtml(item.name)}</span>
+              <span class="news-row-text">${preview}</span>
+              <span style="font-size:0.75rem;color:var(--text-muted);flex-shrink:0;">記事ID: ${escHtml(String(item.postId))}</span>
+              <button class="btn-delete" onclick="deleteCommentItem('${escHtml(String(item.id))}')">削除</button>
+            </div>`;
+        }).join('');
+      } catch {
+        container.innerHTML = '<p style="color:#e53e3e;font-size:0.9rem;">読み込みに失敗しました。</p>';
+      }
+    }
+
+    async function deleteCommentItem(id) {
+      if (!confirm('このコメントを削除しますか？（返信もまとめて削除されます）')) return;
+      try {
+        const res = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ action: 'deleteComment', id })
+        });
+        const result = await res.json();
+        if (result.success) { showToast('削除しました', 'success'); loadAllComments(); }
+        else throw new Error();
+      } catch { showToast('削除に失敗しました', 'error'); }
     }
 
     // ════════════════════════════════════════
