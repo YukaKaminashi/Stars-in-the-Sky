@@ -20,6 +20,7 @@ const MEMBERS_SHEET_NAME = 'members';
 const SCHEDULE_SHEET_NAME = 'schedule';
 const COMMENTS_SHEET_NAME = 'comments';
 const CHAT_SHEET_NAME = 'chat';
+const DRIVE_FOLDER_ID = '1R3KAJcxvTPJWhEa1agin5tuWRTblsinJ';
 
 // ── GET リクエスト ──────────────────────────────
 function doGet(e) {
@@ -91,6 +92,8 @@ function doPost(e) {
     result = saveChat(data);
   } else if (data.action === 'deleteChat') {
     result = deleteChat(data);
+  } else if (data.action === 'uploadFile') {
+    result = uploadFile(data);
   } else {
     result = { error: 'Invalid action' };
   }
@@ -485,6 +488,22 @@ function deleteChat(data) {
     }
   }
   return { error: 'Not found' };
+}
+
+// ── ファイルアップロード（Drive保存→URL返却）────────
+function uploadFile(data) {
+  try {
+    const folder = DriveApp.getFolderById(DRIVE_FOLDER_ID);
+    const bytes = Utilities.base64Decode(data.base64);
+    const blob = Utilities.newBlob(bytes, data.mimeType || 'application/octet-stream', data.fileName);
+    const file = folder.createFile(blob);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    const fileId = file.getId();
+    const url = 'https://drive.google.com/file/d/' + fileId + '/view?usp=sharing';
+    return { success: true, url: url, fileId: fileId };
+  } catch (err) {
+    return { error: String(err) };
+  }
 }
 
 // ── コメントシート初期化（初回のみ手動実行）──────────

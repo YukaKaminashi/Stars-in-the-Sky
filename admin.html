@@ -172,6 +172,50 @@
       gap: 20px;
     }
 
+    /* ── ファイルアップロード UI ── */
+    .file-pick-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .file-pick-btn {
+      padding: 9px 18px;
+      border: 1.5px solid var(--main-purple);
+      color: var(--main-purple);
+      background: var(--white);
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-family: var(--font-gothic);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .file-pick-btn:hover { background: var(--purple-soft); }
+    .file-pick-info {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .or-divider {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 10px 0;
+      color: var(--text-muted);
+      font-size: 0.78rem;
+    }
+    .or-divider::before, .or-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #e0d8f0;
+    }
+
     /* ── Quill エディタカスタマイズ ── */
     .editor-wrapper {
       border: 2px solid #e8e0f0;
@@ -509,8 +553,14 @@
           <input type="text" class="form-input" id="doc-title" placeholder="資料のタイトル" />
         </div>
         <div class="form-group">
-          <label class="form-label">Google Drive URL</label>
-          <input type="url" class="form-input" id="doc-link" placeholder="https://drive.google.com/..." />
+          <label class="form-label">ファイル / URL</label>
+          <div class="file-pick-row">
+            <input type="file" id="doc-file" style="display:none;" accept=".pdf,.pptx,.ppt,.xlsx,.xls,.docx,.doc,.png,.jpg,.jpeg,.gif,.zip,.txt" />
+            <button type="button" class="file-pick-btn" onclick="document.getElementById('doc-file').click()">↑ ファイルを選択</button>
+            <span class="file-pick-info" id="doc-file-info">未選択</span>
+          </div>
+          <div class="or-divider"><span>または</span></div>
+          <input type="url" class="form-input" id="doc-link" placeholder="Google Drive URL (https://...)" />
         </div>
         <div class="form-group">
           <label class="form-label">日付</label>
@@ -805,16 +855,57 @@
       }
     }
 
+    // ファイル選択時にファイル名を表示
+    document.getElementById('doc-file').addEventListener('change', function() {
+      const file = this.files[0];
+      const info = document.getElementById('doc-file-info');
+      if (file) {
+        const size = file.size > 1024 * 1024
+          ? (file.size / 1024 / 1024).toFixed(1) + ' MB'
+          : Math.ceil(file.size / 1024) + ' KB';
+        info.textContent = `${file.name}（${size}）`;
+      } else {
+        info.textContent = '未選択';
+      }
+    });
+
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
     document.getElementById('btn-doc-add').addEventListener('click', async () => {
       const category = document.getElementById('doc-category').value;
       const title = document.getElementById('doc-title').value.trim();
-      const link = document.getElementById('doc-link').value.trim();
       const date = document.getElementById('doc-date').value.trim();
-      if (!title || !link || !date) { showToast('タイトル・URL・日付を入力してください', 'error'); return; }
+      const fileInput = document.getElementById('doc-file');
+      const file = fileInput.files[0];
+      let link = document.getElementById('doc-link').value.trim();
+
+      if (!title || !date) { showToast('タイトルと日付を入力してください', 'error'); return; }
+      if (!file && !link) { showToast('ファイルを選択するか、URLを入力してください', 'error'); return; }
 
       const btn = document.getElementById('btn-doc-add');
       btn.disabled = true;
       try {
+        // ファイルが選択されていたらDriveにアップロード
+        if (file) {
+          showToast('アップロード中...', 'success');
+          const base64 = await fileToBase64(file);
+          const uploadRes = await fetch(GAS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({ action: 'uploadFile', fileName: file.name, mimeType: file.type || 'application/octet-stream', base64 })
+          });
+          const uploadResult = await uploadRes.json();
+          if (!uploadResult.success) throw new Error(uploadResult.error || 'upload failed');
+          link = uploadResult.url;
+        }
+
         const res = await fetch(GAS_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain' },
@@ -826,9 +917,11 @@
           document.getElementById('doc-title').value = '';
           document.getElementById('doc-link').value = '';
           document.getElementById('doc-date').value = '';
+          fileInput.value = '';
+          document.getElementById('doc-file-info').textContent = '未選択';
           loadDocList();
         } else throw new Error();
-      } catch { showToast('追加に失敗しました', 'error'); }
+      } catch (err) { showToast('追加に失敗しました', 'error'); }
       btn.disabled = false;
     });
 
