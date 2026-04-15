@@ -491,6 +491,108 @@
       padding: 20px 0;
     }
 
+    /* ── コメントいいね ── */
+    .comment-like-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: none;
+      border: 1.5px solid #e0d8f0;
+      border-radius: 100px;
+      padding: 4px 12px;
+      font-size: 0.78rem;
+      font-family: var(--font-gothic);
+      font-weight: 700;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 8px;
+    }
+    .comment-like-btn:hover:not(:disabled) {
+      border-color: var(--main-purple);
+      color: var(--main-purple);
+    }
+    .comment-like-btn.liked {
+      background: var(--purple-soft);
+      border-color: var(--main-purple);
+      color: var(--main-purple);
+    }
+    .comment-like-btn:disabled { cursor: default; }
+
+    /* ── 新着バッジ ── */
+    .new-badge {
+      display: inline-block;
+      background: var(--accent-yellow);
+      color: #7A4500;
+      font-size: 0.62rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 100px;
+      letter-spacing: 0.08em;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    /* ── 検索バー ── */
+    .search-area {
+      max-width: 900px;
+      margin: 0 auto 20px;
+      padding: 0 30px;
+    }
+    .search-wrap { position: relative; }
+    .search-input {
+      width: 100%;
+      padding: 10px 40px 10px 16px;
+      border: 1.5px solid #e0d8f0;
+      border-radius: 100px;
+      font-size: 0.9rem;
+      font-family: var(--font-gothic);
+      color: var(--text-dark);
+      background: var(--white);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-input:focus { border-color: var(--main-purple); }
+    .search-clear {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      line-height: 1;
+      display: none;
+    }
+    .search-clear.visible { display: block; }
+
+    /* ── スクロールトップ ── */
+    .scroll-top-btn {
+      position: fixed;
+      bottom: 32px;
+      right: 24px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--main-purple);
+      color: var(--white);
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(107,56,163,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s, transform 0.2s;
+      z-index: 500;
+    }
+    .scroll-top-btn.visible { opacity: 1; pointer-events: auto; }
+    .scroll-top-btn:hover { transform: translateY(-3px); }
+
     /* ── ローディング・空状態 ── */
     .loading-area, .empty-area {
       text-align: center;
@@ -519,7 +621,8 @@
     @media (max-width: 600px) {
       .post-card { padding: 20px 18px; }
       #post-list, #post-detail { padding: 0 16px 80px; }
-      .filter-area { padding: 0 16px; }
+      .filter-area, .search-area { padding: 0 16px; }
+      .scroll-top-btn { bottom: 20px; right: 16px; }
     }
   </style>
 </head>
@@ -551,6 +654,14 @@
     <button class="filter-btn" data-filter="たまねぎ">たまねぎ</button>
     <button class="filter-btn" data-filter="こぐま">こぐま</button>
     <button class="filter-btn" data-filter="国主">国主</button>
+  </div>
+
+  <!-- 検索バー -->
+  <div class="search-area" id="search-area">
+    <div class="search-wrap">
+      <input type="text" class="search-input" id="search-input" placeholder="タイトル・著者名で検索..." />
+      <button class="search-clear" id="search-clear" title="クリア">×</button>
+    </div>
   </div>
 
   <!-- 投稿一覧 -->
@@ -591,6 +702,9 @@
     </div>
   </div>
 
+  <!-- スクロールトップボタン -->
+  <button class="scroll-top-btn" id="scroll-top-btn" title="トップへ戻る">↑</button>
+
   <footer>
     <div style="max-width:900px; margin:0 auto; padding:0 30px;">
       <p class="shippori" style="font-size:1.2rem; color:var(--main-purple); font-weight:800; margin-bottom:8px;">星ノ空</p>
@@ -616,6 +730,7 @@
     //  いいね：LocalStorage管理
     // ════════════════════════════════════════
     const LIKES_KEY = 'hoshinosora_likes';
+    const COMMENT_LIKES_KEY = 'hoshinosora_comment_likes';
 
     function getLikedSet() {
       try { return new Set(JSON.parse(localStorage.getItem(LIKES_KEY)) || []); }
@@ -636,9 +751,36 @@
       saveLikedSet(set);
     }
 
+    // ── コメントいいね LocalStorage ──
+    function getCommentLikedSet() {
+      try { return new Set(JSON.parse(localStorage.getItem(COMMENT_LIKES_KEY)) || []); }
+      catch { return new Set(); }
+    }
+    function saveCommentLikedSet(set) {
+      localStorage.setItem(COMMENT_LIKES_KEY, JSON.stringify([...set]));
+    }
+    function hasLikedComment(id) { return getCommentLikedSet().has(String(id)); }
+    function markCommentLiked(id) {
+      const set = getCommentLikedSet();
+      set.add(String(id));
+      saveCommentLikedSet(set);
+    }
+
+    // ── 新着判定（3日以内）──
+    function isNew(dateStr) {
+      try {
+        const diff = (new Date() - new Date(dateStr)) / (1000 * 60 * 60 * 24);
+        return diff >= 0 && diff <= 3;
+      } catch { return false; }
+    }
+
     // ════════════════════════════════════════
     //  初期化
     // ════════════════════════════════════════
+    // ── 検索状態 ──
+    let searchQuery = '';
+    let searchTimer = null;
+
     async function init() {
       const urlParams = new URLSearchParams(window.location.search);
       const postId = urlParams.get('id');
@@ -656,6 +798,7 @@
       document.getElementById('post-list').style.display = 'block';
       document.getElementById('post-detail').style.display = 'none';
       document.getElementById('filter-area').style.display = 'flex';
+      document.getElementById('search-area').style.display = 'block';
       document.getElementById('blog-header').style.display = 'block';
 
       try {
@@ -670,9 +813,18 @@
     }
 
     function renderPostList(posts) {
-      const filtered = currentFilter === 'all'
+      let filtered = currentFilter === 'all'
         ? posts
         : posts.filter(p => p.group === currentFilter);
+
+      // 検索フィルタ
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        filtered = filtered.filter(p =>
+          (p.title || '').toLowerCase().includes(q) ||
+          (p.author || '').toLowerCase().includes(q)
+        );
+      }
 
       const container = document.getElementById('post-list');
 
@@ -688,7 +840,7 @@
             <span class="post-author">${escHtml(post.author)}</span>
             <span class="post-date">${escHtml(post.date)}</span>
           </div>
-          <div class="post-title">${escHtml(post.title)}</div>
+          <div class="post-title">${escHtml(post.title)}${isNew(post.date) ? '<span class="new-badge">NEW</span>' : ''}</div>
           <div class="post-excerpt">${escHtml(post.excerpt || '')}</div>
           <span class="post-readmore">続きを読む →</span>
         </a>
@@ -702,6 +854,7 @@
       currentPostId = id;
       document.getElementById('post-list').style.display = 'none';
       document.getElementById('filter-area').style.display = 'none';
+      document.getElementById('search-area').style.display = 'none';
       document.getElementById('blog-header').style.display = 'none';
       document.getElementById('post-detail').style.display = 'block';
       document.getElementById('like-area').style.display = 'none';
@@ -851,16 +1004,24 @@
       }
 
       list.innerHTML = comments.map(c => {
-        const repliesHtml = (c.replies || []).map(r => `
+        const repliesHtml = (c.replies || []).map(r => {
+          const rLiked = hasLikedComment(r.id);
+          const rCount = Number(r.likes) || 0;
+          return `
           <div class="reply-card">
             <div class="comment-header">
               <span class="comment-name">↳ ${escHtml(r.name)}</span>
               <span class="comment-date">${escHtml(r.date)}</span>
             </div>
             <div class="comment-text">${escHtml(r.text)}</div>
+            <button class="comment-like-btn${rLiked ? ' liked' : ''}" data-clid="${r.id}" onclick="likeCommentBtn('${r.id}')"${rLiked ? ' disabled' : ''}>
+              ${rLiked ? '♥' : '♡'} <span>${rCount > 0 ? rCount + ' いいね' : 'いいね'}</span>
+            </button>
           </div>
-        `).join('');
+        `}).join('');
 
+        const cLiked = hasLikedComment(c.id);
+        const cCount = Number(c.likes) || 0;
         return `
           <div class="comment-card" id="comment-${c.id}">
             <div class="comment-header">
@@ -868,7 +1029,12 @@
               <span class="comment-date">${escHtml(c.date)}</span>
             </div>
             <div class="comment-text">${escHtml(c.text)}</div>
-            <button class="reply-toggle-btn" onclick="toggleReplyForm('${c.id}')">返信する</button>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+              <button class="comment-like-btn${cLiked ? ' liked' : ''}" data-clid="${c.id}" onclick="likeCommentBtn('${c.id}')"${cLiked ? ' disabled' : ''}>
+                ${cLiked ? '♥' : '♡'} <span>${cCount > 0 ? cCount + ' いいね' : 'いいね'}</span>
+              </button>
+              <button class="reply-toggle-btn" style="margin-top:0;" onclick="toggleReplyForm('${c.id}')">返信する</button>
+            </div>
             <div class="reply-form" id="reply-form-${c.id}">
               <input type="text" class="comment-input" id="reply-name-${c.id}" placeholder="名前" maxlength="30" style="margin-bottom:8px;" />
               <textarea class="comment-input" id="reply-text-${c.id}" placeholder="返信を入力..." maxlength="500" style="min-height:70px;"></textarea>
@@ -915,6 +1081,64 @@
         if (btn) { btn.disabled = false; btn.textContent = '返信する'; }
       }
     }
+
+    // ════════════════════════════════════════
+    //  コメントいいね
+    // ════════════════════════════════════════
+    async function likeCommentBtn(commentId) {
+      if (hasLikedComment(commentId)) return;
+      const btn = document.querySelector(`[data-clid="${commentId}"]`);
+      if (btn) btn.disabled = true;
+      try {
+        const res = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ action: 'likeComment', id: commentId })
+        });
+        const result = await res.json();
+        if (result.success) {
+          markCommentLiked(commentId);
+          if (btn) {
+            btn.classList.add('liked');
+            btn.innerHTML = `♥ <span>${result.likes} いいね</span>`;
+            btn.disabled = true;
+          }
+        } else {
+          if (btn) btn.disabled = false;
+        }
+      } catch(e) {
+        console.error(e);
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    // ════════════════════════════════════════
+    //  検索
+    // ════════════════════════════════════════
+    document.getElementById('search-input').addEventListener('input', function() {
+      const val = this.value;
+      document.getElementById('search-clear').classList.toggle('visible', !!val);
+      searchQuery = val.toLowerCase();
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => renderPostList(allPosts), 300);
+    });
+    document.getElementById('search-clear').addEventListener('click', () => {
+      document.getElementById('search-input').value = '';
+      document.getElementById('search-clear').classList.remove('visible');
+      searchQuery = '';
+      renderPostList(allPosts);
+    });
+
+    // ════════════════════════════════════════
+    //  スクロールトップ
+    // ════════════════════════════════════════
+    const scrollTopBtn = document.getElementById('scroll-top-btn');
+    window.addEventListener('scroll', () => {
+      scrollTopBtn.classList.toggle('visible', window.scrollY > 300);
+    });
+    scrollTopBtn.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
 
     // ════════════════════════════════════════
     //  フィルター

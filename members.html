@@ -203,6 +203,32 @@
       border-radius: 2px;
     }
 
+    /* ── スケジュールタブ ── */
+    .schedule-tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .sch-tab {
+      padding: 6px 16px;
+      border-radius: 100px;
+      border: 1.5px solid #e0d8f0;
+      background: var(--white);
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      font-family: var(--font-gothic);
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .sch-tab:hover { border-color: var(--main-purple); color: var(--main-purple); }
+    .sch-tab.active {
+      background: var(--main-purple);
+      border-color: var(--main-purple);
+      color: var(--white);
+    }
+
     /* ── スケジュール ── */
     #schedule-section {
       background: var(--white);
@@ -267,13 +293,211 @@
       color: var(--white);
     }
     .cat-btn--secret {
-      border-style: dashed;
-      font-style: italic;
-      opacity: 0.7;
+      opacity: 0;
+      background: transparent;
+      border-color: transparent;
+      color: transparent;
+      cursor: default;
     }
     .cat-btn--secret:hover, .cat-btn--secret.active {
-      opacity: 1;
+      opacity: 0;
+      background: transparent;
+      border-color: transparent;
+      color: transparent;
     }
+
+    /* ── 秘密基地モーダル ── */
+    #secret-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(51,34,68,0.55);
+      z-index: 9000;
+      align-items: center;
+      justify-content: center;
+    }
+    #secret-modal.open { display: flex; }
+    .secret-modal-box {
+      background: var(--white);
+      border-radius: 20px;
+      padding: 44px 48px;
+      text-align: center;
+      max-width: 340px;
+      width: 90%;
+      box-shadow: 0 20px 60px rgba(107,56,163,0.25);
+    }
+    .secret-modal-icon { font-size: 1.8rem; margin-bottom: 14px; }
+
+    /* ── 秘密基地 アップロードフォーム ── */
+    .secret-upload-area {
+      margin-top: 20px;
+      background: var(--white);
+      border-radius: 16px;
+      padding: 24px 28px;
+      box-shadow: 0 2px 12px rgba(107,56,163,0.05);
+    }
+    .secret-upload-title {
+      font-family: var(--font-mincho);
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin-bottom: 16px;
+    }
+    .secret-input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid #e0d8f0;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      font-family: var(--font-gothic);
+      color: var(--text-dark);
+      background: var(--white);
+      outline: none;
+      transition: border-color 0.2s;
+      margin-bottom: 8px;
+      box-sizing: border-box;
+    }
+    .secret-input:focus { border-color: var(--main-purple); }
+    .secret-submit-btn {
+      padding: 9px 24px;
+      background: var(--main-purple);
+      color: var(--white);
+      border: none;
+      border-radius: 100px;
+      font-size: 0.85rem;
+      font-family: var(--font-gothic);
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-top: 4px;
+    }
+    .secret-submit-btn:hover { background: #5a2d8a; }
+    .secret-submit-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+    /* ── チャット ── */
+    .chat-area {
+      margin-top: 28px;
+      background: var(--white);
+      border-radius: 20px;
+      padding: 28px 32px;
+      box-shadow: 0 4px 20px rgba(107,56,163,0.06);
+    }
+    .chat-heading {
+      display: flex;
+      align-items: center;
+      font-family: var(--font-mincho);
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--main-purple);
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--purple-soft);
+    }
+    .chat-refresh-btn {
+      margin-left: auto;
+      background: none;
+      border: 1px solid #e0d8f0;
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 0.78rem;
+      font-family: var(--font-gothic);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .chat-refresh-btn:hover { border-color: var(--main-purple); color: var(--main-purple); }
+    .chat-list {
+      max-height: 320px;
+      overflow-y: auto;
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .chat-msg {
+      background: var(--bg-color);
+      border-radius: 12px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .chat-msg-body { flex: 1; }
+    .chat-msg-name {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--main-purple);
+      margin-bottom: 3px;
+    }
+    .chat-msg-text {
+      font-size: 0.9rem;
+      line-height: 1.65;
+      color: var(--text-dark);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .chat-msg-meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .chat-msg-date { font-size: 0.72rem; color: var(--text-muted); white-space: nowrap; }
+    .chat-delete-btn {
+      background: none;
+      border: none;
+      font-size: 0.72rem;
+      color: #ccc;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+    .chat-delete-btn:hover { color: #e53e3e; background: #fff0f0; }
+    .chat-form { display: flex; flex-direction: column; gap: 8px; }
+    .chat-submit-btn {
+      align-self: flex-end;
+      padding: 9px 24px;
+      background: var(--main-purple);
+      color: var(--white);
+      border: none;
+      border-radius: 100px;
+      font-size: 0.85rem;
+      font-family: var(--font-gothic);
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .chat-submit-btn:hover { background: #5a2d8a; }
+    .chat-submit-btn:disabled { background: #ccc; cursor: not-allowed; }
+    .chat-empty { color: var(--text-muted); font-size: 0.88rem; text-align: center; padding: 20px 0; }
+
+    /* ── スクロールトップ ── */
+    .scroll-top-btn {
+      position: fixed;
+      bottom: 32px;
+      right: 24px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--main-purple);
+      color: var(--white);
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(107,56,163,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s, transform 0.2s;
+      z-index: 500;
+    }
+    .scroll-top-btn.visible { opacity: 1; pointer-events: auto; }
+    .scroll-top-btn:hover { transform: translateY(-3px); }
 
     /* 資料カード */
     .doc-list { display: flex; flex-direction: column; gap: 12px; }
@@ -372,6 +596,9 @@
       #schedule-section { padding: 24px 18px; }
       .doc-card { flex-direction: column; align-items: flex-start; }
       .pw-box { padding: 40px 28px; }
+      .secret-modal-box { padding: 36px 24px; }
+      .chat-area { padding: 22px 18px; }
+      .scroll-top-btn { bottom: 20px; right: 16px; }
     }
   </style>
 </head>
@@ -413,6 +640,13 @@
       <!-- スケジュール -->
       <div id="schedule-section">
         <div class="section-heading">スケジュール</div>
+        <div class="schedule-tabs">
+          <button class="sch-tab active" data-scat="all">すべて</button>
+          <button class="sch-tab" data-scat="戦略・攻城">戦略・攻城</button>
+          <button class="sch-tab" data-scat="イベント">イベント</button>
+          <button class="sch-tab" data-scat="経営会議">経営会議</button>
+          <button class="sch-tab" data-scat="その他">その他</button>
+        </div>
         <ul class="schedule-list" id="schedule-list">
           <div class="loading-area"><div class="loading-spinner"></div></div>
         </ul>
@@ -430,10 +664,40 @@
           <button class="cat-btn" data-cat="スライド資料">スライド資料</button>
           <button class="cat-btn" data-cat="組織図">組織図</button>
           <button class="cat-btn" data-cat="議事録">議事録</button>
-          <button class="cat-btn cat-btn--secret" data-cat="椿の備忘録">椿の備忘録</button>
+          <button class="cat-btn cat-btn--secret" data-cat="椿の秘密基地">椿の秘密基地</button>
         </div>
         <div class="doc-list" id="doc-list">
           <div class="loading-area"><div class="loading-spinner"></div></div>
+        </div>
+
+        <!-- 秘密基地コンテンツ（baki認証後に表示） -->
+        <div id="secret-base-area" style="display:none;">
+          <div class="doc-list" id="secret-doc-list"></div>
+
+          <!-- アップロードフォーム -->
+          <div class="secret-upload-area">
+            <div class="secret-upload-title">資料を追加</div>
+            <input type="text" class="secret-input" id="secret-doc-title" placeholder="タイトル" maxlength="100" />
+            <input type="url" class="secret-input" id="secret-doc-link" placeholder="Google Drive URL" />
+            <input type="text" class="secret-input" id="secret-doc-date" placeholder="日付 (例: 2026.04.15)" maxlength="20" />
+            <button class="secret-submit-btn" id="secret-doc-submit">追加する ✦</button>
+          </div>
+
+          <!-- チャット -->
+          <div class="chat-area">
+            <div class="chat-heading">
+              チャット
+              <button class="chat-refresh-btn" id="chat-refresh-btn">↻ 更新</button>
+            </div>
+            <div class="chat-list" id="chat-list">
+              <p class="chat-empty">読み込み中...</p>
+            </div>
+            <div class="chat-form">
+              <input type="text" class="secret-input" id="chat-name" placeholder="名前" maxlength="30" style="margin-bottom:0;" />
+              <textarea class="secret-input" id="chat-text" placeholder="メッセージを入力..." maxlength="400" style="resize:vertical; min-height:70px; line-height:1.65; margin-bottom:0;"></textarea>
+              <button class="chat-submit-btn" id="chat-submit-btn">送信する</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -449,6 +713,19 @@
 
   </div><!-- /members-content -->
 
+  <!-- 秘密基地パスワードモーダル -->
+  <div id="secret-modal">
+    <div class="secret-modal-box">
+      <div class="secret-modal-icon">✦</div>
+      <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:20px;">…</p>
+      <input type="password" class="pw-input" id="secret-pw-input" placeholder="*" style="margin-bottom:12px;" />
+      <button class="pw-btn" id="secret-pw-btn">▶</button>
+    </div>
+  </div>
+
+  <!-- スクロールトップボタン -->
+  <button class="scroll-top-btn" id="scroll-top-btn" title="トップへ戻る">↑</button>
+
   <script>
     // ════════════════════════════════════════
     //  設定
@@ -456,6 +733,8 @@
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbwJBQ897qqOhTjvLeqRcCTSFllFgKOHAGQwtSXJ38hZey4NXTlBYD1ZpMWvvgNpj_BZ0w/exec';
     const MEMBERS_PASSWORD = 'sits';
     const SESSION_KEY = 'hoshinosora_members';
+    const SECRET_PASSWORD = 'baki';
+    const SECRET_SESSION_KEY = 'hoshinosora_secret';
 
     // ════════════════════════════════════════
     //  認証
@@ -502,6 +781,8 @@
     // ════════════════════════════════════════
     let allDocs = [];
     let currentCat = 'all';
+    let allSchedule = [];
+    let currentSchCat = 'all';
 
     async function loadAll() {
       await Promise.all([loadSchedule(), loadDocs()]);
@@ -511,21 +792,40 @@
       const list = document.getElementById('schedule-list');
       try {
         const res = await fetch(GAS_URL + '?action=getSchedule');
-        const items = await res.json();
-        if (!Array.isArray(items) || items.length === 0) {
-          list.innerHTML = '<p class="schedule-empty">スケジュールはまだ登録されていません。</p>';
-          return;
-        }
-        list.innerHTML = items.map(item => `
-          <li class="schedule-item">
-            <span class="schedule-date">${escHtml(String(item.date))}</span>
-            <span class="schedule-text">${escHtml(item.text)}</span>
-          </li>
-        `).join('');
+        allSchedule = await res.json();
+        renderSchedule();
       } catch (e) {
         list.innerHTML = '<p class="schedule-empty">読み込みに失敗しました。</p>';
       }
     }
+
+    function renderSchedule() {
+      const list = document.getElementById('schedule-list');
+      const filtered = currentSchCat === 'all'
+        ? allSchedule
+        : allSchedule.filter(item => (item.category || 'その他') === currentSchCat);
+
+      if (!Array.isArray(filtered) || filtered.length === 0) {
+        list.innerHTML = '<p class="schedule-empty">スケジュールはまだ登録されていません。</p>';
+        return;
+      }
+      list.innerHTML = filtered.map(item => `
+        <li class="schedule-item">
+          <span class="schedule-date">${escHtml(String(item.date))}</span>
+          <span class="schedule-text">${escHtml(item.text)}</span>
+        </li>
+      `).join('');
+    }
+
+    // スケジュールタブ切替
+    document.querySelectorAll('.sch-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.sch-tab').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentSchCat = btn.dataset.scat;
+        renderSchedule();
+      });
+    });
 
     async function loadDocs() {
       try {
@@ -537,10 +837,27 @@
       }
     }
 
-    const SECRET_CAT = '椿の備忘録';
+    const SECRET_CAT = '椿の秘密基地';
+
+    function isSecretAuthed() {
+      return sessionStorage.getItem(SECRET_SESSION_KEY) === 'ok';
+    }
 
     function renderDocs() {
       const container = document.getElementById('doc-list');
+      const secretArea = document.getElementById('secret-base-area');
+
+      if (currentCat === SECRET_CAT) {
+        // 秘密基地モードは別エリアで表示
+        container.style.display = 'none';
+        secretArea.style.display = 'block';
+        renderSecretDocs();
+        return;
+      }
+
+      secretArea.style.display = 'none';
+      container.style.display = '';
+
       const filtered = currentCat === 'all'
         ? allDocs.filter(d => d.category !== SECRET_CAT)
         : allDocs.filter(d => d.category === currentCat);
@@ -566,14 +883,205 @@
       `).join('');
     }
 
-    // カテゴリ切替
+    function renderSecretDocs() {
+      const container = document.getElementById('secret-doc-list');
+      const filtered = allDocs.filter(d => d.category === SECRET_CAT);
+      if (!Array.isArray(filtered) || filtered.length === 0) {
+        container.innerHTML = '<p class="empty-msg" style="margin-bottom:0;">資料はまだありません。</p>';
+        return;
+      }
+      container.innerHTML = filtered.map(doc => `
+        <div class="doc-card">
+          <div class="doc-info">
+            <div class="doc-title">${escHtml(doc.title)}</div>
+            <div class="doc-meta">
+              <span class="doc-date">${escHtml(String(doc.date))}</span>
+            </div>
+          </div>
+          <a href="${escAttr(doc.link)}" target="_blank" rel="noopener" class="btn-drive">
+            Drive で開く →
+          </a>
+        </div>
+      `).join('');
+    }
+
+    // カテゴリ切替（秘密基地は認証チェック）
     document.querySelectorAll('.cat-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentCat = btn.dataset.cat;
-        renderDocs();
+        const cat = btn.dataset.cat;
+        if (cat === SECRET_CAT) {
+          if (isSecretAuthed()) {
+            setActiveDocCat(btn, cat);
+          } else {
+            openSecretModal();
+          }
+          return;
+        }
+        setActiveDocCat(btn, cat);
       });
+    });
+
+    function setActiveDocCat(btn, cat) {
+      document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentCat = cat;
+      renderDocs();
+      if (cat === SECRET_CAT) loadChat();
+    }
+
+    // ════════════════════════════════════════
+    //  秘密基地 認証モーダル
+    // ════════════════════════════════════════
+    function openSecretModal() {
+      document.getElementById('secret-modal').classList.add('open');
+      document.getElementById('secret-pw-input').value = '';
+      setTimeout(() => document.getElementById('secret-pw-input').focus(), 100);
+    }
+    function closeSecretModal() {
+      document.getElementById('secret-modal').classList.remove('open');
+    }
+
+    document.getElementById('secret-pw-btn').addEventListener('click', () => {
+      const pw = document.getElementById('secret-pw-input').value;
+      if (pw === SECRET_PASSWORD) {
+        sessionStorage.setItem(SECRET_SESSION_KEY, 'ok');
+        closeSecretModal();
+        const secretBtn = document.querySelector('.cat-btn--secret');
+        setActiveDocCat(secretBtn, SECRET_CAT);
+      } else {
+        closeSecretModal(); // エラー表示なし、静かに閉じる
+      }
+    });
+    document.getElementById('secret-pw-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('secret-pw-btn').click();
+    });
+    document.getElementById('secret-modal').addEventListener('click', e => {
+      if (e.target === document.getElementById('secret-modal')) closeSecretModal();
+    });
+
+    // ════════════════════════════════════════
+    //  秘密基地 資料アップロード
+    // ════════════════════════════════════════
+    document.getElementById('secret-doc-submit').addEventListener('click', async () => {
+      const title = document.getElementById('secret-doc-title').value.trim();
+      const link = document.getElementById('secret-doc-link').value.trim();
+      const date = document.getElementById('secret-doc-date').value.trim();
+      if (!title || !link || !date) { alert('タイトル・URL・日付を入力してください。'); return; }
+
+      const btn = document.getElementById('secret-doc-submit');
+      btn.disabled = true;
+      try {
+        const res = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ action: 'saveMember', category: SECRET_CAT, title, link, date })
+        });
+        const result = await res.json();
+        if (result.success) {
+          document.getElementById('secret-doc-title').value = '';
+          document.getElementById('secret-doc-link').value = '';
+          document.getElementById('secret-doc-date').value = '';
+          // 再読み込みして表示更新
+          const res2 = await fetch(GAS_URL + '?action=getMembers');
+          allDocs = await res2.json();
+          renderSecretDocs();
+        } else { alert('追加に失敗しました。'); }
+      } catch { alert('追加に失敗しました。'); }
+      btn.disabled = false;
+    });
+
+    // ════════════════════════════════════════
+    //  チャット
+    // ════════════════════════════════════════
+    let chatPollTimer = null;
+
+    async function loadChat() {
+      const list = document.getElementById('chat-list');
+      list.innerHTML = '<p class="chat-empty">読み込み中...</p>';
+      try {
+        const res = await fetch(GAS_URL + '?action=getChat');
+        const items = await res.json();
+        renderChat(items);
+      } catch {
+        list.innerHTML = '<p class="chat-empty">読み込みに失敗しました。</p>';
+      }
+      // 30秒ポーリング
+      clearInterval(chatPollTimer);
+      chatPollTimer = setInterval(async () => {
+        if (currentCat !== SECRET_CAT) { clearInterval(chatPollTimer); return; }
+        try {
+          const res = await fetch(GAS_URL + '?action=getChat');
+          renderChat(await res.json());
+        } catch {}
+      }, 30000);
+    }
+
+    function renderChat(items) {
+      const list = document.getElementById('chat-list');
+      if (!Array.isArray(items) || items.length === 0) {
+        list.innerHTML = '<p class="chat-empty">まだメッセージはありません。最初のメッセージを送ってみよう！</p>';
+        return;
+      }
+      list.innerHTML = items.map(m => `
+        <div class="chat-msg">
+          <div class="chat-msg-body">
+            <div class="chat-msg-name">${escHtml(m.name)}</div>
+            <div class="chat-msg-text">${escHtml(m.text)}</div>
+          </div>
+          <div class="chat-msg-meta">
+            <span class="chat-msg-date">${escHtml(String(m.date).slice(5, 16))}</span>
+            <button class="chat-delete-btn" onclick="deleteChatMsg('${escHtml(String(m.id))}')">削除</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    document.getElementById('chat-refresh-btn').addEventListener('click', loadChat);
+
+    document.getElementById('chat-submit-btn').addEventListener('click', async () => {
+      const name = document.getElementById('chat-name').value.trim();
+      const text = document.getElementById('chat-text').value.trim();
+      if (!name || !text) { alert('名前とメッセージを入力してください。'); return; }
+
+      const btn = document.getElementById('chat-submit-btn');
+      btn.disabled = true;
+      try {
+        const res = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ action: 'saveChat', name, text })
+        });
+        const result = await res.json();
+        if (result.success) {
+          document.getElementById('chat-text').value = '';
+          loadChat();
+        } else { alert('送信に失敗しました。'); }
+      } catch { alert('送信に失敗しました。'); }
+      btn.disabled = false;
+    });
+
+    async function deleteChatMsg(id) {
+      if (!confirm('このメッセージを削除しますか？')) return;
+      try {
+        const res = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ action: 'deleteChat', id })
+        });
+        const result = await res.json();
+        if (result.success) loadChat();
+      } catch { alert('削除に失敗しました。'); }
+    }
+
+    // ════════════════════════════════════════
+    //  スクロールトップ
+    // ════════════════════════════════════════
+    const scrollTopBtn = document.getElementById('scroll-top-btn');
+    window.addEventListener('scroll', () => {
+      scrollTopBtn.classList.toggle('visible', window.scrollY > 300);
+    });
+    scrollTopBtn.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 
     // ════════════════════════════════════════

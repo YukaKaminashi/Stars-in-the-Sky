@@ -461,6 +461,15 @@
       <!-- スケジュール管理 -->
       <div style="margin-bottom:48px;">
         <div class="form-label" style="font-size:1rem; margin-bottom:20px;">スケジュール管理</div>
+        <div class="form-group">
+          <label class="form-label">カテゴリ</label>
+          <select class="form-select" id="sch-category">
+            <option value="その他">その他</option>
+            <option value="戦略・攻城">戦略・攻城</option>
+            <option value="イベント">イベント</option>
+            <option value="経営会議">経営会議</option>
+          </select>
+        </div>
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">日付表示テキスト</label>
@@ -492,6 +501,7 @@
             <option value="スライド資料">スライド資料</option>
             <option value="組織図">組織図</option>
             <option value="議事録">議事録</option>
+            <option value="椿の秘密基地">椿の秘密基地</option>
           </select>
         </div>
         <div class="form-group">
@@ -724,6 +734,7 @@
         container.innerHTML = items.map(item => `
           <div class="news-row">
             <span class="news-row-date">${escHtml(String(item.date))}</span>
+            <span class="news-row-badge">${escHtml(item.category || 'その他')}</span>
             <span class="news-row-text" style="flex:1;">${escHtml(item.text)}</span>
             <button class="btn-delete" onclick="deleteSchItem('${escHtml(String(item.id))}')">削除</button>
           </div>`).join('');
@@ -733,6 +744,7 @@
     }
 
     document.getElementById('btn-sch-add').addEventListener('click', async () => {
+      const category = document.getElementById('sch-category').value;
       const date = document.getElementById('sch-date').value.trim();
       const text = document.getElementById('sch-text').value.trim();
       if (!date || !text) { showToast('日付と内容を入力してください', 'error'); return; }
@@ -743,7 +755,7 @@
         const res = await fetch(GAS_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain' },
-          body: JSON.stringify({ action: 'saveSchedule', date, text })
+          body: JSON.stringify({ action: 'saveSchedule', date, text, category })
         });
         const result = await res.json();
         if (result.success) {

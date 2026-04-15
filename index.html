@@ -707,6 +707,34 @@
     }
     .discord-icon { width: 32px; height: 32px; }
 
+    /* ── スクロールトップ ── */
+    .scroll-top-btn {
+      position: fixed;
+      bottom: 32px;
+      right: 24px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--main-purple);
+      color: var(--white);
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(107,56,163,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s, transform 0.2s;
+      z-index: 500;
+    }
+    .scroll-top-btn.visible { opacity: 1; pointer-events: auto; }
+    .scroll-top-btn:hover { transform: translateY(-3px); }
+
+    /* ── スマホ専用改行 ── */
+    .br-sp { display: none; }
+
     /* ── MOBILE ── */
     @media (max-width: 768px) {
       .split-layout { grid-template-columns: 1fr; gap: 40px; }
@@ -723,6 +751,12 @@
       .section { padding: 80px 0; }
       /* Heroの波装飾とコンテンツの被りを軽減 */
       .hero { padding-bottom: 60px; }
+      /* スマホ専用改行を有効化 */
+      .br-sp { display: block; }
+      /* グループ説明文は左揃えの方が読みやすい */
+      .group-content p { text-align: left; }
+      /* スクロールトップボタン位置調整 */
+      .scroll-top-btn { bottom: 20px; right: 16px; }
     }
   </style>
 </head>
@@ -821,9 +855,9 @@
         <div class="about-text fade-in">
           <span class="section-label">Philosophy</span>
           <h2 class="shippori section-title">みんなが主役！<br>ずっとなかよし。</h2>
-          <p>学生から80代まで、幅広い世代が集まる「星ノ空」。<br>
-            一門内で競い合うのではなく、それぞれの個性を活かしながら、全員でひとつの大きな星座を描くことを大切にしています。<br>
-            初心者も大歓迎。自由に楽しく集まれる場所で、あなたをお待ちしています。</p>
+          <p>学生から80代まで、<span class="br-sp"></span>幅広い世代が集まる「星ノ空」。<br>
+            一門内で競い合うのではなく、<span class="br-sp"></span>それぞれの個性を活かしながら、<span class="br-sp"></span>全員でひとつの大きな星座を<span class="br-sp"></span>描くことを大切にしています。<br>
+            初心者も大歓迎。<span class="br-sp"></span>自由に楽しく集まれる場所で、<span class="br-sp"></span>あなたをお待ちしています。</p>
         </div>
         <div class="fade-in" style="text-align: center;">
           <img src="https://raw.githubusercontent.com/YukaKaminashi/Stars-in-the-Sky/main/logo.hoshinosora.webp" alt="星ノ空" style="width: 100%; max-width: 350px; opacity: 0.9; filter: drop-shadow(0 20px 30px rgba(107,56,163,0.15)); border-radius: 20px;">
@@ -948,10 +982,10 @@
 
   <section id="join" class="section" style="text-align: center; padding-bottom: 150px;">
     <div class="container fade-in">
-      <h2 class="shippori section-title" style="font-size: 3rem; margin-bottom: 30px;">一緒に星座を描きませんか？</h2>
+      <h2 class="shippori section-title" style="font-size: 3rem; margin-bottom: 30px;">一緒に星座を<span class="br-sp"></span>描きませんか？</h2>
       <p style="margin-bottom: 50px; color: var(--text-muted); line-height: 2; font-size: 1.1rem;">
-        星ノ空のDiscordサーバーで、仲間たちの声を聞いてみませんか？<br>
-        気軽に覗いてみてください。お待ちしています！
+        星ノ空のDiscordサーバーで、<span class="br-sp"></span>仲間たちの声を聞いてみませんか？<br>
+        気軽に覗いてみてください。<span class="br-sp"></span>お待ちしています！
       </p>
       <a href="https://discord.gg/T3rfveJtf6" target="_blank" class="discord-btn">
         <svg class="discord-icon" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
@@ -961,6 +995,9 @@
       </a>
     </div>
   </section>
+
+  <!-- スクロールトップボタン -->
+  <button class="scroll-top-btn" id="scroll-top-btn" title="トップへ戻る">↑</button>
 
   <footer>
     <div class="container fade-in">
@@ -1171,6 +1208,15 @@
     });
 
     loadNewsTop();
+
+    // ── スクロールトップ ──
+    const scrollTopBtn = document.getElementById('scroll-top-btn');
+    window.addEventListener('scroll', () => {
+      scrollTopBtn.classList.toggle('visible', window.scrollY > 300);
+    });
+    scrollTopBtn.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
   </script>
 </body>
 </html>

@@ -10,7 +10,7 @@
  *    ・次のユーザーとして実行: 自分
  *    ・アクセスできるユーザー: 全員（匿名ユーザーを含む）
  * 4. 表示されたウェブアプリの URL を admin.html / blog.html / index.html の GAS_URL に貼り付け
- * 5. 初回のみ initializeSheet() と initializeNewsSheet() を手動実行してシートを初期化
+ * 5. 初回のみ各 initialize 関数を手動実行してシートを初期化
  */
 
 const SPREADSHEET_ID = '1D1eRCdgn8rIAR5lOXGUrMruJ3heytfqfMKayqcH6LUE';
@@ -19,6 +19,7 @@ const NEWS_SHEET_NAME = 'news';
 const MEMBERS_SHEET_NAME = 'members';
 const SCHEDULE_SHEET_NAME = 'schedule';
 const COMMENTS_SHEET_NAME = 'comments';
+const CHAT_SHEET_NAME = 'chat';
 
 // ── GET リクエスト ──────────────────────────────
 function doGet(e) {
@@ -41,6 +42,8 @@ function doGet(e) {
     result = getComments(e.parameter.postId);
   } else if (action === 'getAllComments') {
     result = getAllComments();
+  } else if (action === 'getChat') {
+    result = getChat();
   } else {
     result = { error: 'Invalid action' };
   }
@@ -70,6 +73,8 @@ function doPost(e) {
     result = deleteNews(data);
   } else if (data.action === 'likePost') {
     result = likePost(data);
+  } else if (data.action === 'likeComment') {
+    result = likeComment(data);
   } else if (data.action === 'saveMember') {
     result = saveMember(data);
   } else if (data.action === 'deleteMember') {
@@ -82,6 +87,10 @@ function doPost(e) {
     result = saveComment(data);
   } else if (data.action === 'deleteComment') {
     result = deleteComment(data);
+  } else if (data.action === 'saveChat') {
+    result = saveChat(data);
+  } else if (data.action === 'deleteChat') {
+    result = deleteChat(data);
   } else {
     result = { error: 'Invalid action' };
   }
@@ -159,7 +168,7 @@ function getLikes(id) {
   return { likes: 0 };
 }
 
-// ── いいね追加 ────────────────────────────────────
+// ── 記事いいね追加 ────────────────────────────────────
 function likePost(data) {
   const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(SHEET_NAME);
   const range = sheet.getDataRange();
@@ -167,7 +176,30 @@ function likePost(data) {
   const headers = values[0];
   let likesCol = headers.indexOf('likes');
 
-  // likes列がなければ追加
+  if (likesCol === -1) {
+    likesCol = headers.length;
+    sheet.getRange(1, likesCol + 1).setValue('likes');
+  }
+
+  for (let i = 1; i < values.length; i++) {
+    if (String(values[i][0]) === String(data.id)) {
+      const current = Number(values[i][likesCol]) || 0;
+      sheet.getRange(i + 1, likesCol + 1).setValue(current + 1);
+      return { success: true, likes: current + 1 };
+    }
+  }
+  return { error: 'Not found' };
+}
+
+// ── コメントいいね追加 ────────────────────────────
+function likeComment(data) {
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(COMMENTS_SHEET_NAME);
+  const range = sheet.getDataRange();
+  const values = range.getValues();
+  const headers = values[0];
+  let likesCol = headers.indexOf('likes');
+
+  // likes列がなければ自動追加
   if (likesCol === -1) {
     likesCol = headers.length;
     sheet.getRange(1, likesCol + 1).setValue('likes');
@@ -316,10 +348,11 @@ function getSchedule() {
 }
 
 // ── スケジュール保存 ──────────────────────────────
+// scheduleシート列順: id, date, text, category, published
 function saveSchedule(data) {
   const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(SCHEDULE_SHEET_NAME);
   const id = new Date().getTime();
-  sheet.appendRow([id, data.date, data.text, true]);
+  sheet.appendRow([id, data.date, data.text, data.category || 'その他', true]);
   return { success: true, id: id };
 }
 
@@ -354,10 +387,8 @@ function getComments(postId) {
     }
   }
 
-  // 古い順にソート
   all.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-  // 親コメントに replies を付与
   const parents = all.filter(c => !c.parentId);
   const replies = all.filter(c => !!c.parentId);
 
@@ -399,20 +430,61 @@ function saveComment(data) {
 function deleteComment(data) {
   const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(COMMENTS_SHEET_NAME);
   const rows = sheet.getDataRange().getValues();
-  // 削除対象のidを収集（親 + その返信）
   const targetIds = new Set([String(data.id)]);
   for (let i = 1; i < rows.length; i++) {
     if (String(rows[i][2]) === String(data.id)) {
       targetIds.add(String(rows[i][0]));
     }
   }
-  // 後ろから削除（行番号がずれないように）
   for (let i = rows.length - 1; i >= 1; i--) {
     if (targetIds.has(String(rows[i][0]))) {
       sheet.deleteRow(i + 1);
     }
   }
   return { success: true };
+}
+
+// ── チャット取得（新しい順・最大50件）──────────────
+function getChat() {
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(CHAT_SHEET_NAME);
+  if (!sheet) return [];
+  const data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return [];
+
+  const headers = data[0];
+  const items = [];
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    const item = {};
+    headers.forEach((h, j) => { item[h] = row[j]; });
+    items.push(item);
+  }
+  items.sort((a, b) => new Date(b.date) - new Date(a.date));
+  return items.slice(0, 50);
+}
+
+// ── チャット保存 ──────────────────────────────────
+function saveChat(data) {
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(CHAT_SHEET_NAME);
+  if (!sheet) return { error: 'Sheet not found' };
+  const id = new Date().getTime();
+  const date = Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy-MM-dd HH:mm');
+  sheet.appendRow([id, data.name, data.text, date]);
+  return { success: true, id: id, date: date };
+}
+
+// ── チャット削除 ──────────────────────────────────
+function deleteChat(data) {
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(CHAT_SHEET_NAME);
+  if (!sheet) return { error: 'Sheet not found' };
+  const rows = sheet.getDataRange().getValues();
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][0]) === String(data.id)) {
+      sheet.deleteRow(i + 1);
+      return { success: true };
+    }
+  }
+  return { error: 'Not found' };
 }
 
 // ── コメントシート初期化（初回のみ手動実行）──────────
@@ -440,15 +512,28 @@ function initializeMembersSheet() {
 }
 
 // ── スケジュールシート初期化（初回のみ手動実行）────
+// 列順: id, date, text, category, published
 function initializeScheduleSheet() {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   let sheet = ss.getSheetByName(SCHEDULE_SHEET_NAME);
   if (!sheet) sheet = ss.insertSheet(SCHEDULE_SHEET_NAME);
   if (sheet.getLastRow() === 0) {
-    sheet.appendRow(['id', 'date', 'text', 'published']);
-    sheet.getRange(1, 1, 1, 4).setFontWeight('bold');
+    sheet.appendRow(['id', 'date', 'text', 'category', 'published']);
+    sheet.getRange(1, 1, 1, 5).setFontWeight('bold');
   }
   Logger.log('scheduleシートの初期化完了');
+}
+
+// ── チャットシート初期化（初回のみ手動実行）─────────
+function initializeChatSheet() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let sheet = ss.getSheetByName(CHAT_SHEET_NAME);
+  if (!sheet) sheet = ss.insertSheet(CHAT_SHEET_NAME);
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(['id', 'name', 'text', 'date']);
+    sheet.getRange(1, 1, 1, 4).setFontWeight('bold');
+  }
+  Logger.log('chatシートの初期化完了');
 }
 
 // ── ニュースシート初期化（初回のみ手動実行）───────
