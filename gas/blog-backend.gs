@@ -555,6 +555,183 @@ function initializeChatSheet() {
   Logger.log('chatシートの初期化完了');
 }
 
+// ════════════════════════════════════════════════
+//  デモデータ投入（「米＝コメント」アプリの動作確認用）
+// ════════════════════════════════════════════════
+// GASエディタで seedDemoData を手動実行すると、
+// デモ投稿＋デモコメント（返信・いいね付き）を一括投入します。
+// 元に戻したいときは clearDemoData を手動実行してください。
+// 二重投入は Script Properties で防止しています。
+
+function seedDemoData() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+
+  // 必要なシートとヘッダーを用意
+  initializeSheet();
+  initializeCommentsSheet();
+  const postsSheet = ss.getSheetByName(SHEET_NAME);
+  const commentsSheet = ss.getSheetByName(COMMENTS_SHEET_NAME);
+
+  // いいね列を保証（フロントで表示されるように）
+  ensureColumn_(postsSheet, 'likes');
+  ensureColumn_(commentsSheet, 'likes');
+
+  const props = PropertiesService.getScriptProperties();
+  if (props.getProperty('DEMO_SEEDED')) {
+    Logger.log('デモデータは既に投入済みです。clearDemoData で削除できます。');
+    return;
+  }
+
+  const now = new Date();
+  const fmt = (d) => Utilities.formatDate(d, 'Asia/Tokyo', 'yyyy-MM-dd HH:mm');
+  const daysAgo = (n) => new Date(now.getTime() - n * 24 * 60 * 60 * 1000);
+
+  let seq = now.getTime();
+  const nextId = () => String(seq++);
+
+  const createdPostIds = [];
+  const createdCommentIds = [];
+
+  // ── デモ投稿（コメントを付ける対象）────────────────
+  const posts = [
+    {
+      title: '「星ノ空」ブログ、開設しました🌟',
+      author: '星ノ空 運営',
+      group: '広報課',
+      date: fmt(daysAgo(1)),
+      content: '<p>いつも星ノ空を応援いただきありがとうございます。このたび、みんなの声を届けるブログを開設しました！</p>'
+        + '<h2>このブログでできること</h2>'
+        + '<ul><li>活動報告・編成研究の共有</li><li>記事へのいいね＆コメント</li><li>コメントへの返信でわいわい交流</li></ul>'
+        + '<p>気軽にコメントを残していってくださいね✨</p>'
+    },
+    {
+      title: 'S105 攻城戦 ふりかえりメモ',
+      author: 'ぱんだ',
+      group: 'はなたれパンダ',
+      date: fmt(daysAgo(2)),
+      content: '<p>お疲れさまでした！S105の攻城戦、無事勝ち切れました🐼</p>'
+        + '<h2>よかった点</h2>'
+        + '<ul><li>集結のタイミングが揃っていた</li><li>偵察がこまめに入っていた</li></ul>'
+        + '<h2>次回の課題</h2>'
+        + '<p>援軍の回転をもう少し速くしたいところ。次戦に活かしましょう！</p>'
+    },
+    {
+      title: '遷都のタイミング、みんなどうしてる？',
+      author: 'ねぎ',
+      group: 'たまねぎ',
+      date: fmt(daysAgo(4)),
+      content: '<p>遷都の判断っていつも悩みます…。みなさんの基準を教えてほしいです🧅</p>'
+        + '<p>個人的には資源に余裕が出て、周囲が落ち着いたタイミングを狙っています。</p>'
+    }
+  ];
+
+  posts.forEach(p => {
+    const id = nextId();
+    createdPostIds.push(id);
+    appendByHeaders_(postsSheet, {
+      id: id,
+      title: p.title,
+      author: p.author,
+      group: p.group,
+      content: p.content,
+      date: p.date,
+      published: true,
+      likes: Math.floor(3 + Math.random() * 20)
+    });
+    p._id = id;
+  });
+
+  // ── デモコメント（親コメント→返信の順で投入）──────
+  // parent は仮キー、reply の parentKey で親コメントを参照する
+  const comments = [
+    // 投稿1へのコメント
+    { key: 'c1', postId: posts[0]._id, name: 'こぐま', text: '開設おめでとうございます！これから毎日チェックします🐻', date: fmt(daysAgo(1)), likes: 8 },
+    { key: 'c1r1', parentKey: 'c1', postId: posts[0]._id, name: '星ノ空 運営', text: 'ありがとうございます！どんどんコメントお待ちしてます✨', date: fmt(daysAgo(1)), likes: 3 },
+    { key: 'c2', postId: posts[0]._id, name: 'ゲスト', text: 'デザインめっちゃ可愛い…！星ノ空らしくて好きです', date: fmt(daysAgo(0)), likes: 5 },
+
+    // 投稿2へのコメント
+    { key: 'c3', postId: posts[1]._id, name: 'たまねぎ', text: '編成すごく参考になりました！次はうちも真似してみます🧅', date: fmt(daysAgo(2)), likes: 6 },
+    { key: 'c3r1', parentKey: 'c3', postId: posts[1]._id, name: 'ぱんだ', text: 'ぜひぜひ〜！わからないところあれば聞いてください🐼', date: fmt(daysAgo(2)), likes: 2 },
+    { key: 'c4', postId: posts[1]._id, name: '国主', text: 'ナイスまとめ、乙でした🙏 次戦も頼りにしてます', date: fmt(daysAgo(1)), likes: 10 },
+
+    // 投稿3へのコメント
+    { key: 'c5', postId: posts[2]._id, name: 'はなたれパンダ', text: 'うちは資源に余裕が出たタイミングで遷都してます。参考まで！', date: fmt(daysAgo(3)), likes: 4 },
+    { key: 'c6', postId: posts[2]._id, name: 'こぐま', text: 'なるほど…！周囲の状況も大事ですよね🐻', date: fmt(daysAgo(2)), likes: 1 }
+  ];
+
+  const keyToId = {};
+  // 親コメントを先に投入してIDを確定させる
+  comments.filter(c => !c.parentKey).forEach(c => {
+    const id = nextId();
+    keyToId[c.key] = id;
+    createdCommentIds.push(id);
+    appendByHeaders_(commentsSheet, {
+      id: id, postId: c.postId, parentId: '',
+      name: c.name, text: c.text, date: c.date, published: true, likes: c.likes || 0
+    });
+  });
+  // 返信を投入（親IDを解決）
+  comments.filter(c => c.parentKey).forEach(c => {
+    const id = nextId();
+    keyToId[c.key] = id;
+    createdCommentIds.push(id);
+    appendByHeaders_(commentsSheet, {
+      id: id, postId: c.postId, parentId: keyToId[c.parentKey] || '',
+      name: c.name, text: c.text, date: c.date, published: true, likes: c.likes || 0
+    });
+  });
+
+  props.setProperty('DEMO_SEEDED', '1');
+  props.setProperty('DEMO_IDS', JSON.stringify({ posts: createdPostIds, comments: createdCommentIds }));
+
+  Logger.log('デモデータを投入しました：投稿 %s件 / コメント %s件',
+    createdPostIds.length, createdCommentIds.length);
+}
+
+// ── デモデータ削除（seedDemoData で入れた行だけを消す）──
+function clearDemoData() {
+  const props = PropertiesService.getScriptProperties();
+  const raw = props.getProperty('DEMO_IDS');
+  if (!raw) {
+    Logger.log('削除対象のデモデータがありません。');
+    return;
+  }
+  const ids = JSON.parse(raw);
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  deleteRowsById_(ss.getSheetByName(SHEET_NAME), ids.posts || []);
+  deleteRowsById_(ss.getSheetByName(COMMENTS_SHEET_NAME), ids.comments || []);
+  props.deleteProperty('DEMO_SEEDED');
+  props.deleteProperty('DEMO_IDS');
+  Logger.log('デモデータを削除しました。');
+}
+
+// ── ヘルパー：ヘッダー名に合わせて1行追記 ──────────
+function appendByHeaders_(sheet, obj) {
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const row = headers.map(h => (Object.prototype.hasOwnProperty.call(obj, h) ? obj[h] : ''));
+  sheet.appendRow(row);
+}
+
+// ── ヘルパー：指定した列が無ければヘッダーに追加 ───
+function ensureColumn_(sheet, name) {
+  const lastCol = sheet.getLastColumn();
+  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  if (headers.indexOf(name) === -1) {
+    const col = lastCol + 1;
+    sheet.getRange(1, col).setValue(name).setFontWeight('bold');
+  }
+}
+
+// ── ヘルパー：id（1列目）が一致する行を下から削除 ──
+function deleteRowsById_(sheet, idList) {
+  if (!sheet || !idList.length) return;
+  const target = new Set(idList.map(String));
+  const values = sheet.getDataRange().getValues();
+  for (let i = values.length - 1; i >= 1; i--) {
+    if (target.has(String(values[i][0]))) sheet.deleteRow(i + 1);
+  }
+}
+
 // ── ニュースシート初期化（初回のみ手動実行）───────
 function initializeNewsSheet() {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
